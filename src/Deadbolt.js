@@ -1,13 +1,35 @@
 "use strict";
 
+class Node {
+    constructor(type, name) {
+        this.type = type;
+        this.name = name;
+    }
+};
+
+class RelationshipNode extends Node {
+    constructor(type, name, params) {
+        super(type, name);
+        this.params = params;
+    }
+};
+
+class AdvancedNode extends Node {
+    constructor(type, name, value) {
+        super(type, name);
+        this.value = value;
+    }
+};
+
+class
+
 class Deadbolt {
     constructor(deadboltHandler) {
         this.deadboltHandler = deadboltHandler;
     }
 
     restrict(desc) {
-        const tokens = tokenizer(desc);
-        const ast = parser(tokens);
+        const ast = parser(desc);
         const result = reducer(ast, {
 
         });
@@ -21,10 +43,6 @@ class Deadbolt {
             }
 
         };
-    }
-
-    tokenizer(input) {
-
     }
 
     parser(tokens) {
@@ -41,7 +59,9 @@ class Deadbolt {
     }
 
     subjectPresent() {
-
+        return {
+            type:
+        }
     }
 
     subjectNotPresent() {
