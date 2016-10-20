@@ -1,12 +1,16 @@
 "use strict";
 
 class Deadbolt {
-    constructor(privilegeHandler) {
-        this.privilegeHandler = privilegeHandler;
+    constructor(deadboltHandler) {
+        this.deadboltHandler = deadboltHandler;
     }
 
     restrict(desc) {
-        this._desc = desc;
+        const tokens = tokenizer(desc);
+        const ast = parser(tokens);
+        const result = reducer(ast, {
+
+        });
 
         return (req, res, next) => {
             let subject = this.privilegeHandler.getSubject(req, res, next);
@@ -17,6 +21,23 @@ class Deadbolt {
             }
 
         };
+    }
+
+    tokenizer(input) {
+
+    }
+
+    parser(tokens) {
+        if (type)
+        const result = ownPrivilege => {
+
+        };
+
+        return result.bind(void 0, something);
+    }
+
+    reducer(ast, visitor) {
+
     }
 
     subjectPresent() {
@@ -35,37 +56,13 @@ class Deadbolt {
 
     }
 
+    regEx() {
+
+    }
+
     dynamic(fn) {
 
     }
-
-    parse(desc) {
-        const result = ownPrivilege => {
-
-        };
-
-        return result.bind(void 0, something);
-    }
 };
 
-class DeadboltCollection {
-    constructor() {
-        this.handlers = new Map();
-    }
-
-    setDefaultHandler(defaultHandler) {
-        this.defaultHandler = defaultHandler;
-    }
-
-    getDefaultHandler() {
-        return this.defaultHandler;
-    }
-
-    addHandler(key, handler) {
-        this.handlers.set(key, handler);
-    }
-
-    getHandler(key) {
-        return this.handlers.get(key);
-    }
-}
+module.exports.Deadbolt = Deadbolt;

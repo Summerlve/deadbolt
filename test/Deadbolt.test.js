@@ -1,37 +1,45 @@
 "use strict";
 
+const { Deadbolt } = require("../src/Deadbolt.js");
+
+class DeadboltHandler {
+    constructor() {
+    }
+
+    getSubject() {
+        return new Subject();
+    }
+
+    beforeAuthCheck() {
+
+    }
+
+    onAuthFailure() {
+
+    }
+};
+
 class Subject {
     constructor() {
-
+        if (new.target === Subject) throw new Error("Subject can not be instanced");
     }
 
     getRoles() {
-
+        return [];
     }
 
     getPermissions() {
-
+        return [];
     }
 };
 
-class PrivilegeHandler {
-    getSubject(req, res, next) {
-        return Subject();
-    }
-};
+const filter = new Deadbolt(new DeadboltHandler());
+filter.restrict({
+    or: [
+        filter.role("admin"),
+        filter.role("myself"),
+        filter.dynamic(_ => {
 
-class HandlerCollection {
-    constructor() {
-        this.handlers = new Map();
-        this.defaultHandler = new PrivilegeHandler();
-        this.handlers.set("default", this.defaultHandler);
-    }
-
-    getHandler(key) {
-        return this.handlers.get(key);
-    }
-
-    getDefaultHandler() {
-        return this.defaultHandler;
-    }
-};
+        });
+    ]
+});
