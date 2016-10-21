@@ -21,7 +21,12 @@ class AdvancedNode extends Node {
     }
 };
 
-class
+class SingleNode extends Node {
+    constructor(type, name, value) {
+        super(type, name);
+        this.value = value;
+    }
+};
 
 class Deadbolt {
     constructor(deadboltHandler) {
