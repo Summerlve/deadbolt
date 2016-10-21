@@ -7,23 +7,30 @@ class Node {
     }
 };
 
+class RootNode extends Node {
+    constructor(body = []) {
+        super("RootNode", "RootNode");
+        this.body = body;
+    }
+}
+
 class RelationshipNode extends Node {
-    constructor(type, name, params) {
-        super(type, name);
+    constructor(name, params = []) {
+        super("Relationship", name);
         this.params = params;
     }
 };
 
 class AdvancedNode extends Node {
-    constructor(type, name, value) {
-        super(type, name);
+    constructor(name, value) {
+        super("AdvancedNode", name);
         this.value = value;
     }
 };
 
 class SingleNode extends Node {
-    constructor(type, name, value) {
-        super(type, name);
+    constructor(name, value) {
+        super("SingleNode" ,name);
         this.value = value;
     }
 };
@@ -50,8 +57,31 @@ class Deadbolt {
         };
     }
 
-    parser(tokens) {
-        if (type)
+    parser(desc) {
+        if (desc instanceof Node)
+        {
+            // simple situation , only single restrict.
+            if (desc.type === "AdvancedNode")
+            {
+                switch (desc.name) {
+                    case "dynamic":
+                        const rootNode = new RootNode();
+                        rootNode.body.push({
+
+                        });
+                        return rootNode;
+                    case "regEx":
+                        return rootNode;
+                    default:
+
+                }
+            }
+            else if (desc.type === "SingleNode")
+            {
+
+            }
+        }
+
         const result = ownPrivilege => {
 
         };
@@ -64,29 +94,32 @@ class Deadbolt {
     }
 
     subjectPresent() {
-        return {
-            type:
-        }
+        const node = new SingleNode("subjectPresent", "subjectPresent");
+        return node;
     }
 
     subjectNotPresent() {
-
+        const node = new SingleNode("subjectNotPresent", "subjectNotPresent");
+        return node;
     }
 
-    role() {
-
+    role(value) {
+        const node = new SingleNode("role", value);
+        return role;
     }
 
-    permission() {
-
+    permission(value) {
+        const node = new SingleNode("permission", value);
+        return node;
     }
 
-    regEx() {
-
+    regEx(value) {
+        const node = new AdvancedNode("regEx", value);
+        return node;
     }
 
     dynamic(fn) {
-
+        const node = new AdvancedNode("dynamic", value);
     }
 };
 
