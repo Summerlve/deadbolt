@@ -10,5 +10,8 @@
     "rbac"
   ],
   "author": "Summer",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "loglevel": "^1.4.1"
+  }
 }

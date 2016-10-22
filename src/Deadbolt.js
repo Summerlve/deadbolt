@@ -1,5 +1,17 @@
 "use strict";
 
+const log = require("loglevel");
+const util = require("util");
+
+if (process.env.NODE_ENV === "production")
+{
+    log.setLevel("error");
+}
+else
+{
+    lgo.setLevel("debug");
+}
+
 class Node {
     constructor(type, name) {
         this.type = type;
@@ -41,8 +53,10 @@ class Deadbolt {
     }
 
     restrict(desc) {
-        const ast = parser(desc);
-        const result = reducer(ast, {
+        const ast = this.parser(desc);
+        console.log(util.inspect(ast, false, null));
+
+        const result = this.reducer(ast, {
 
         });
 
@@ -58,35 +72,81 @@ class Deadbolt {
     }
 
     parser(desc) {
+        console.log(util.inspect(desc, false, null));
+        const rootNode = new RootNode();
+
+        // simple situation , only single restrict.
         if (desc instanceof Node)
         {
-            // simple situation , only single restrict.
             if (desc.type === "AdvancedNode")
             {
                 switch (desc.name) {
                     case "dynamic":
-                        const rootNode = new RootNode();
-                        rootNode.body.push({
-
-                        });
+                        rootNode.body.push(desc);
                         return rootNode;
                     case "regEx":
+                        rootNode.body.push(desc);
                         return rootNode;
                     default:
-
+                        return rootNode;
                 }
             }
             else if (desc.type === "SingleNode")
             {
-
+                switch (desc.name) {
+                    case "subjectPresent":
+                        rootNode.body.push(desc);
+                        return rootNode;
+                    case "subjectNotPresent":
+                        rootNode.body.push(desc);
+                        return rootNode;
+                    case "role":
+                        rootNode.body.push(desc);
+                        return rootNode;
+                    case "permission":
+                        rootNode.body.push(desc);
+                        return rootNode;
+                    default:
+                        return rootNode;
+                }
             }
         }
 
-        const result = ownPrivilege => {
+        rootNode.body.push(this.walk(desc));
+        return rootNode;
+    }
 
-        };
+    walk(desc) {
+        let relationshipNode = {};
+        let nodeArrayBody = [];
 
-        return result.bind(void 0, something);
+        if (desc.or) {
+            relationshipNode = new RelationshipNode("or");
+            nodeArrayBody = desc.or;
+        }
+
+        if (desc.and) {
+            relationshipNode = new RelationshipNode("and");
+            nodeArrayBody = desc.and;
+        }
+
+        if (desc.not) {
+            relationshipNode = new RelationshipNode("not");
+            nodeArrayBody = desc.not;
+        }
+
+        nodeArrayBody.forEach(param => {
+            if (param instanceof Node)
+            {
+                relationshipNode.params.push(param);
+            }
+            else
+            {
+                relationshipNode.params.push(this.walk(param));
+            }
+        });
+
+        return relationshipNode;
     }
 
     reducer(ast, visitor) {
@@ -105,7 +165,7 @@ class Deadbolt {
 
     role(value) {
         const node = new SingleNode("role", value);
-        return role;
+        return node;
     }
 
     permission(value) {
@@ -119,7 +179,8 @@ class Deadbolt {
     }
 
     dynamic(fn) {
-        const node = new AdvancedNode("dynamic", value);
+        const node = new AdvancedNode("dynamic", fn);
+        return node
     }
 };
 

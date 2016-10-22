@@ -3,33 +3,45 @@
 const { Deadbolt } = require("../src/Deadbolt.js");
 
 class DeadboltHandler {
-    constructor() {
+    set subject(subject) {
+        this._subject = subject;
     }
 
-    getSubject() {
-        return new Subject();
+    get subject() {
+        return this._subject;
     }
 
-    beforeAuthCheck() {
-
+    beforeAuthCheck(req, res, next) {
+        next();
     }
 
-    onAuthFailure() {
-
+    onAuthFailure(req, res, next) {
+        next();
     }
 };
 
 class Subject {
-    constructor() {
-        if (new.target === Subject) throw new Error("Subject can not be instanced");
+    set identifier(identifier) {
+        this._identifier = identifier;
     }
 
-    getRoles() {
-        return [];
+    get identifier() {
+        return this._identifier;
     }
 
-    getPermissions() {
-        return [];
+    set roles(roles) {
+        this._roles = roles;
+    }
+    get roles() {
+        return this._roles;
+    }
+
+    set permissions(permissions) {
+        this._permissions = permissions;
+    }
+
+    get permissions() {
+        return this._permissions;
     }
 };
 
@@ -40,6 +52,17 @@ filter.restrict({
         filter.role("myself"),
         filter.dynamic(_ => {
 
-        });
+        }),
+        filter.regEx(["role", /a-z/]),
+        {
+            and: [
+                filter.role("some"),
+                {
+                    not: [
+                        filter.role("test")
+                    ]
+                }
+            ]
+        }
     ]
 });
