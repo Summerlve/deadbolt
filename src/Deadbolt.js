@@ -9,7 +9,7 @@ if (process.env.NODE_ENV === "production")
 }
 else
 {
-    lgo.setLevel("debug");
+    log.setLevel("debug");
 }
 
 class Node {
@@ -54,7 +54,7 @@ class Deadbolt {
 
     restrict(desc) {
         const ast = this.parser(desc);
-        console.log(util.inspect(ast, false, null));
+        log.debug(util.inspect(ast, false, null));
 
         const result = this.reducer(ast, {
 
@@ -72,7 +72,7 @@ class Deadbolt {
     }
 
     parser(desc) {
-        console.log(util.inspect(desc, false, null));
+        log.debug(util.inspect(desc, false, null));
         const rootNode = new RootNode();
 
         // simple situation , only single restrict.
@@ -149,7 +149,7 @@ class Deadbolt {
         return relationshipNode;
     }
 
-    reducer(ast, visitor) {
+    reducer(ast , visitor) {
 
     }
 

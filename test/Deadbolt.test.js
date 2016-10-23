@@ -50,8 +50,14 @@ filter.restrict({
     or: [
         filter.role("admin"),
         filter.role("myself"),
-        filter.dynamic(_ => {
+        filter.dynamic((identifier, permissions, roles) => {
+            if (permissions.indexOf("do_something_right")
+                && roles.indexOf(("myself")))
+            {
+                return true;
+            }
 
+            return false;
         }),
         filter.regEx(["role", /a-z/]),
         {
