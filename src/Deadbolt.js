@@ -56,9 +56,8 @@ class Deadbolt {
         const ast = this.parser(desc);
         log.debug(util.inspect(ast, false, null));
 
-        const result = this.reducer(ast, {
-
-        });
+        const result = this.reducer(ast);
+        log.debug(result);
 
         return (req, res, next) => {
             let subject = this.privilegeHandler.getSubject(req, res, next);
@@ -88,7 +87,7 @@ class Deadbolt {
                         rootNode.body.push(desc);
                         return rootNode;
                     default:
-                        return rootNode;
+                        throw new Error(`AdvancedNode have no ${desc.name} node type.`);
                 }
             }
             else if (desc.type === "SingleNode")
@@ -107,7 +106,7 @@ class Deadbolt {
                         rootNode.body.push(desc);
                         return rootNode;
                     default:
-                        return rootNode;
+                        throw new Error(`SingleNode have no ${desc.name} node type.`);
                 }
             }
         }
@@ -149,7 +148,28 @@ class Deadbolt {
         return relationshipNode;
     }
 
-    reducer(ast , visitor) {
+    reducer(ast) {
+        if (!(ast instanceof RootNode))
+        {
+            throw new Error("reducer's first arg must be RootNode");
+        }
+
+        const body = ast.body;
+        const node = body[0];
+
+        if (node instanceof AdvancedNode)
+        {
+            switch (node.name) {
+                case "dynamic":
+                    const value = node.value;
+
+                    break;
+                case "regEx":
+                    break;
+                default:
+
+            }
+        }
 
     }
 
