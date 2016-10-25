@@ -162,10 +162,40 @@ class Deadbolt {
             switch (node.name) {
                 case "dynamic":
                     const value = node.value;
-
-                    break;
+                    return (identifier, roles, permission) => {
+                        return value(identifier, roles, permissions);
+                    };
                 case "regEx":
-                    break;
+                    const value = node.value;
+                    const [kind, regex] = value;
+
+                    return (identifier, roles, permissions) => {
+                        let result = false;
+
+                        switch (kind) {
+                            case "identifier":
+                                result = regex.test(identifier);
+                                break;
+                            case "role":
+                                roles.forEach(role => {
+                                    if (regex.test(role))
+                                    {
+                                        result = true;
+                                    }
+                                });
+                                break;
+                            case "permission":
+                                permissions.forEach(permission => {
+                                    if (regex.test(permission))
+                                    {
+                                        result = true;
+                                    }
+                                });
+                                break;
+                            default:
+                                throw new Error ("Deadbolt.protptype.regEx()'s kind must in [identifier, role, permission]");
+                        }
+                    };
                 default:
 
             }
