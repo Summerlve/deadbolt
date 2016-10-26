@@ -75,6 +75,7 @@ class Deadbolt {
         const rootNode = new RootNode();
 
         // simple situation , only single restrict.
+        // if [or, and ,not] passed in, it's not instanceof Node.
         if (desc instanceof Node)
         {
             if (desc.type === "AdvancedNode")
@@ -83,9 +84,11 @@ class Deadbolt {
                     case "dynamic":
                         rootNode.body.push(desc);
                         return rootNode;
+
                     case "regEx":
                         rootNode.body.push(desc);
                         return rootNode;
+
                     default:
                         throw new Error(`AdvancedNode have no ${desc.name} node type.`);
                 }
@@ -96,15 +99,19 @@ class Deadbolt {
                     case "subjectPresent":
                         rootNode.body.push(desc);
                         return rootNode;
+
                     case "subjectNotPresent":
                         rootNode.body.push(desc);
                         return rootNode;
+
                     case "role":
                         rootNode.body.push(desc);
                         return rootNode;
+
                     case "permission":
                         rootNode.body.push(desc);
                         return rootNode;
+
                     default:
                         throw new Error(`SingleNode have no ${desc.name} node type.`);
                 }
@@ -156,16 +163,19 @@ class Deadbolt {
 
         const body = ast.body;
         const node = body[0];
+        log.debug(util.inspect(node, false, null));
 
         if (node instanceof AdvancedNode)
         {
             switch (node.name) {
-                case "dynamic":
+                case "dynamic": {
                     const value = node.value;
                     return (identifier, roles, permission) => {
                         return value(identifier, roles, permissions);
                     };
-                case "regEx":
+                }
+
+                case "regEx": {
                     const value = node.value;
                     const [kind, regex] = value;
 
@@ -176,6 +186,7 @@ class Deadbolt {
                             case "identifier":
                                 result = regex.test(identifier);
                                 break;
+
                             case "role":
                                 roles.forEach(role => {
                                     if (regex.test(role))
@@ -184,6 +195,7 @@ class Deadbolt {
                                     }
                                 });
                                 break;
+
                             case "permission":
                                 permissions.forEach(permission => {
                                     if (regex.test(permission))
@@ -192,15 +204,59 @@ class Deadbolt {
                                     }
                                 });
                                 break;
+
                             default:
                                 throw new Error ("Deadbolt.protptype.regEx()'s kind must in [identifier, role, permission]");
                         }
                     };
-                default:
+                }
 
+                default:
+                    throw new Error("AdvancedNode's name must in [dynamic, regEx]");
             }
         }
 
+        if (node instanceof SingleNode)
+        {
+            switch (node.name) {
+                case "subjectPresent": {
+                    return (identifier, roles, permissions) => {
+                        if (identifier) return true;
+                        else return false;
+                    };
+                }
+
+                case "subjectNotPresent": {
+                    return (identifier, roles, permissions) => true;
+                }
+
+                case "role": {
+                    const value = node.value;
+                    return (identifier, roles, permissions) => {
+                        return roles.includes(value);
+                    };
+                }
+
+                case "permission": {
+                    const value = node.value;
+                    return (identifier, roles, permissions) => {
+                        return permissions.includes(value);
+                    };
+                }
+
+                default:
+                    throw new Error("SingleNode's name must in [subjectPresent, subjectNotPresent, role, permission]");
+            }
+        }
+
+        if (node instanceof RelationshipNode)
+        {
+            switch (node.name) {
+                case "or": {
+
+                }
+            }
+        }
     }
 
     subjectPresent() {
