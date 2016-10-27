@@ -12,6 +12,11 @@ else
     log.setLevel("debug");
 }
 
+if (process.env.NODE_ENV === "test")
+{
+    log.setLevel("silent");
+}
+
 class Node {
     constructor(type, name) {
         this.type = type;
@@ -56,18 +61,20 @@ class Deadbolt {
         const ast = this.parser(desc);
         log.debug(util.inspect(ast, false, null));
 
-        const node = this.rootNodeCheck(ast);
-        const judger = this.reducer(node);
+        const node = this.getRootNodeBodyFirstElement(ast);
+        const judger = this.judgerGen(node);
         log.debug("judger:", judger);
 
         return (req, res, next) => {
             let subject = this.deadboltHandler.getSubject(req, res, next);
-
-            if (subject === null)
-            {
-                this.deadboltHandler.onAuthFailure(req, res, next);
-            }
+            let identifier = subject.identifier;
+            let roles = subject.roles;
+            let permissions = subject.permissions;
         };
+    }
+
+    handler(desc) {
+
     }
 
     parser(desc) {
@@ -155,10 +162,10 @@ class Deadbolt {
         return relationshipNode;
     }
 
-    rootNodeCheck(ast) {
+    getRootNodeBodyFirstElement(ast) {
         if (!(ast instanceof RootNode))
         {
-            throw new Error("rootNodeCheck's first arg must be RootNode");
+            throw new Error("getRootNodeBodyFirstElement's first arg must be RootNode");
         }
 
         const body = ast.body;
@@ -169,13 +176,17 @@ class Deadbolt {
         return node;
     }
 
+    judgerGen(node) {
+        return this.reducer(node);
+    }
+
     reducer(node) {
         if (node instanceof AdvancedNode)
         {
             switch (node.name) {
                 case "dynamic": {
                     const value = node.value;
-                    return (identifier, roles, permission) => {
+                    return (identifier, roles, permissions) => {
                         return value(identifier, roles, permissions);
                     };
                 }
@@ -259,11 +270,12 @@ class Deadbolt {
             switch (node.name) {
                 case "or": {
                     const params = node.params;
+                    log.debug(params.length);
                     const judgeFns = params.map(param => this.reducer(param));
                     const result = false;
 
                     return (identifier, roles, permissions) => {
-                        judgeFns.reduce((pv, cv) => {
+                        return judgeFns.reduce((pv, cv) => {
                             return pv || cv(identifier, roles, permissions);
                         }, result);
                     };
@@ -275,7 +287,7 @@ class Deadbolt {
                     const result = true;
 
                     return (identifier, roles, permissions) => {
-                        judgeFns.reduce((pv, cv) => {
+                        return judgeFns.reduce((pv, cv) => {
                             return pv && cv(identifier, roles, permissions);
                         }, result);
                     };
@@ -287,7 +299,7 @@ class Deadbolt {
                     const result = true;
 
                     return (identifier, roles, permissions) => {
-                        judgeFns.reduce((pv, cv) => {
+                        return judgeFns.reduce((pv, cv) => {
                             return pv && !cv(identifier, roles, permissions);
                         }, result);
                     };
