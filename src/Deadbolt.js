@@ -56,17 +56,17 @@ class Deadbolt {
         const ast = this.parser(desc);
         log.debug(util.inspect(ast, false, null));
 
-        const result = this.reducer(ast);
-        log.debug(result);
+        const node = this.rootNodeCheck(ast);
+        const judger = this.reducer(node);
+        log.debug("judger:", judger);
 
         return (req, res, next) => {
-            let subject = this.privilegeHandler.getSubject(req, res, next);
+            let subject = this.deadboltHandler.getSubject(req, res, next);
 
             if (subject === null)
             {
-                this.privilegeHandler.onAuthFailure(req, res, next);
+                this.deadboltHandler.onAuthFailure(req, res, next);
             }
-
         };
     }
 
@@ -155,16 +155,21 @@ class Deadbolt {
         return relationshipNode;
     }
 
-    reducer(ast) {
+    rootNodeCheck(ast) {
         if (!(ast instanceof RootNode))
         {
-            throw new Error("reducer's first arg must be RootNode");
+            throw new Error("rootNodeCheck's first arg must be RootNode");
         }
 
         const body = ast.body;
         const node = body[0];
+
         log.debug(util.inspect(node, false, null));
 
+        return node;
+    }
+
+    reducer(node) {
         if (node instanceof AdvancedNode)
         {
             switch (node.name) {
@@ -253,7 +258,39 @@ class Deadbolt {
         {
             switch (node.name) {
                 case "or": {
+                    const params = node.params;
+                    const judgeFns = params.map(param => this.reducer(param));
+                    const result = false;
 
+                    return (identifier, roles, permissions) => {
+                        judgeFns.reduce((pv, cv) => {
+                            return pv || cv(identifier, roles, permissions);
+                        }, result);
+                    };
+                }
+
+                case "and": {
+                    const params = node.params;
+                    const judgeFns = params.map(param => this.reducer(param));
+                    const result = true;
+
+                    return (identifier, roles, permissions) => {
+                        judgeFns.reduce((pv, cv) => {
+                            return pv && cv(identifier, roles, permissions);
+                        }, result);
+                    };
+                }
+
+                case "not": {
+                    const params = node.params;
+                    const judgeFns = params.map(param => this.reducer(param));
+                    const result = true;
+
+                    return (identifier, roles, permissions) => {
+                        judgeFns.reduce((pv, cv) => {
+                            return pv && !cv(identifier, roles, permissions);
+                        }, result);
+                    };
                 }
             }
         }
