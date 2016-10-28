@@ -60,7 +60,7 @@ describe("Deadbolt Test", _ => {
             subject.roles = ["admin", "test", "one", "two"];
             subject.permissions = ["delete_everything", "create_something", "do_anything", "do_one", "do_two"];
 
-            const ast = filter.parser({
+            const judger = filter.getJudger({
                 and: [
                     filter.role("admin"),
                     filter.role("test"),
@@ -78,8 +78,6 @@ describe("Deadbolt Test", _ => {
                 ]
             });
 
-            const node = filter.getRootNodeBodyFirstElement(ast);
-            const judger = filter.judgerGen(node);
             const result = judger(subject.identifier, subject.roles, subject.permissions);
             assert.deepStrictEqual(result, true);
 
@@ -88,7 +86,20 @@ describe("Deadbolt Test", _ => {
 
         it("Not meets the conditions, -> false", done => {
             subject.identifier = "fail";
-            subject.roles = ["mustFail"]
+            subject.roles = ["mustFail", "failEveryTime"];
+            subject.permissions = ["one", "two"];
+
+            const judger = filter.getJudger({
+                and: [
+                    filter.role("mustFail"),
+                    filter.permission("thr")
+                ]
+            });
+
+            const result = judger(subject.identifier, subject.roles, subject.permissions);
+            assert.deepStrictEqual(result, false);
+
+            done();
         });
     });
 });

@@ -58,12 +58,7 @@ class Deadbolt {
     }
 
     restrict(desc) {
-        const ast = this.parser(desc);
-        log.debug(util.inspect(ast, false, null));
-
-        const node = this.getRootNodeBodyFirstElement(ast);
-        const judger = this.judgerGen(node);
-        log.debug("judger:", judger);
+        const judger = this.getJudger(desc);
 
         return (req, res, next) => {
             let subject = this.deadboltHandler.getSubject(req, res, next);
@@ -73,8 +68,15 @@ class Deadbolt {
         };
     }
 
-    handler(desc) {
+    getJudger(desc) {
+        const ast = this.parser(desc);
+        log.debug(util.inspect(ast, false, null));
 
+        const node = this.getRootNodeBodyFirstElement(ast);
+        const judger = this.judgerGen(node);
+        log.debug("judger:", judger);
+
+        return judger;
     }
 
     parser(desc) {
