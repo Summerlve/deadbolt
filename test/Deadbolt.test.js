@@ -5,14 +5,24 @@ process.env.NODE_ENV = "test";
 const assert = require("assert");
 const { Deadbolt } = require("../src/Deadbolt.js");
 
-describe("Deadbolt Test", _ => {
-    class DeadboltHandler {
-        set subject(subject) {
-            this._subject = subject;
-        }
+describe("Test Deadbolt", _ => {
+    describe("Test fundamental methods on Deadbolt.prototype", _ => {
+        it("Deadbolt.prototype.parser:", done => {
+            done();
+        });
 
-        get subject() {
-            return this._subject;
+        it("Deadbolt.prototype.transformer:", done => {
+            done();
+        });
+
+        it("Deadbolt.prototype.judgerGenerator:", done => {
+            done();
+        });
+    });
+
+    class DeadboltHandler {
+        getSubject(req, res, next) {
+            return this.subject;
         }
 
         beforeAuthCheck(req, res, next) {
@@ -21,6 +31,14 @@ describe("Deadbolt Test", _ => {
 
         onAuthFailure(req, res, next) {
             console.log("onAuthFailure");
+        }
+
+        set subject(subject) {
+            this._subject = subject;
+        }
+
+        get subject() {
+            return this._subject;
         }
     };
 
@@ -54,13 +72,79 @@ describe("Deadbolt Test", _ => {
     deadboltHandler.subject = subject;
     const filter = new Deadbolt(deadboltHandler);
 
+    describe("Test Simple Use Cases", _ => {
+        describe("SingleNode Test", _ => {
+            it("Deadbolt.prototype.subjectPresent: Subject has identifier, subjectPresent -> pass", done => {
+                subject.identifier = "has";
+                const judger = filter.compile(filter.subjectPresent());
+                const result = judger(subject.identifier, [], []);
+                assert.deepStrictEqual(result, true);
+                done();
+            });
+
+            it("Deadbolt.prototype.subjectPresent: Subject has no identifier, subjectPresent -> failure", done => {
+                subject.identifier = "";
+                const judger = filter.compile(filter.subjectPresent());
+                const result = judger(subject.identifier, [], []);
+                assert.deepStrictEqual(result, false);
+                done();
+            });
+
+            it("Subject has identifier, subjectNotPresent -> pass", done => {
+                subject.identifier = "has";
+                const judger = filter.compile(filter.subjectNotPresent());
+                const result = judger(subject.identifier, [], []);
+                assert.deepStrictEqual(result, true);
+                done();
+            });
+
+            it("Subject has no identifier, subjectNotPresent -> pass", done => {
+                subject.identifier = "";
+                const judger = filter.compile(filter.subjectNotPresent());
+                const result = judger(subject.identifier, [], []);
+                assert.deepStrictEqual(result, true);
+                done();
+            });
+
+            it("Subject has correct role, role -> pass", done => {
+                subject.roles = ["correct"];
+                const judger = filter.compile(filter.role("correct"));
+                const result = judger("", subject.roles, []);
+                assert.deepStrictEqual(result, true);
+                done();
+            });
+
+            it("Subject has no role, role -> failure", done => {
+                subject.roles = [];
+                const judger = filter.compile(filter.role("correct"));
+                const result = judger("", subject.roles, []);
+                assert.deepStrictEqual(result, false);
+                done();
+            });
+
+            it("Subject has no correct role, role -> failure", done => {
+                subject.roles = ["nocorrect"];
+                const judger = filter.compile(filter.role("correct"));
+                const result = judger("", subject.roles, []);
+                assert.deepStrictEqual(result, false);
+                done();
+            });
+
+            it("Subject")
+        });
+
+        describe("AdvancedNode Test", _ => {
+
+        });
+    });
+
     describe("Test and expression", _ => {
         it("Meet the conditions, -> true", done => {
             subject.identifier = "root";
             subject.roles = ["admin", "test", "one", "two"];
             subject.permissions = ["delete_everything", "create_something", "do_anything", "do_one", "do_two"];
 
-            const judger = filter.getJudger({
+            const judger = filter.compile({
                 and: [
                     filter.role("admin"),
                     filter.role("test"),
@@ -89,7 +173,7 @@ describe("Deadbolt Test", _ => {
             subject.roles = ["mustFail", "failEveryTime"];
             subject.permissions = ["one", "two"];
 
-            const judger = filter.getJudger({
+            const judger = filter.compile({
                 and: [
                     filter.role("mustFail"),
                     filter.permission("thr")

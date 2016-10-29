@@ -3,18 +3,16 @@
 const log = require("loglevel");
 const util = require("util");
 
-if (process.env.NODE_ENV === "production")
-{
-    log.setLevel("error");
-}
-else
-{
-    log.setLevel("debug");
-}
-
-if (process.env.NODE_ENV === "test")
-{
-    log.setLevel("silent");
+// set log level by env.
+switch (process.env.NODE_ENV) {
+    case "production":
+        log.setLevel("error");
+        break;
+    case "test":
+        log.setLevel("silent");
+        break;
+    default:
+        log.setLevel("debug");
 }
 
 class Node {
@@ -22,7 +20,7 @@ class Node {
         this.type = type;
         this.name = name;
     }
-};
+}
 
 class RootNode extends Node {
     constructor(body = []) {
@@ -36,7 +34,7 @@ class RelationshipNode extends Node {
         super("Relationship", name);
         this.params = params;
     }
-};
+}
 
 class AdvancedNode extends Node {
     constructor(name, value) {
@@ -50,7 +48,7 @@ class SingleNode extends Node {
         super("SingleNode" ,name);
         this.value = value;
     }
-};
+}
 
 class Deadbolt {
     constructor(deadboltHandler) {
@@ -58,7 +56,7 @@ class Deadbolt {
     }
 
     restrict(desc) {
-        const judger = this.getJudger(desc);
+        const judger = this.compile(desc);
 
         return (req, res, next) => {
             let subject = this.deadboltHandler.getSubject(req, res, next);
@@ -68,12 +66,12 @@ class Deadbolt {
         };
     }
 
-    getJudger(desc) {
-        const ast = this.parser(desc);
-        log.debug(util.inspect(ast, false, null));
+    compile(desc) {
+        const originalAST = this.parser(desc);
+        log.debug(util.inspect(originalAST, false, null));
 
-        const node = this.getRootNodeBodyFirstElement(ast);
-        const judger = this.judgerGen(node);
+        const transformedAST = this.transformer(originalAST);
+        const judger = this.judgerGenerator(transformedAST);
         log.debug("judger:", judger);
 
         return judger;
@@ -164,21 +162,21 @@ class Deadbolt {
         return relationshipNode;
     }
 
-    getRootNodeBodyFirstElement(ast) {
-        if (!(ast instanceof RootNode))
+    transformer(originalAST) {
+        if (!(originalAST instanceof RootNode))
         {
-            throw new Error("getRootNodeBodyFirstElement's first arg must be RootNode");
+            throw new Error("transformer's first arg must be RootNode");
         }
 
-        const body = ast.body;
-        const node = body[0];
+        const body = originalAST.body;
+        const transformedAST = body[0];
 
-        log.debug(util.inspect(node, false, null));
+        log.debug(util.inspect(transformedAST, false, null));
 
-        return node;
+        return transformedAST;
     }
 
-    judgerGen(node) {
+    judgerGenerator(node) {
         return this.reducer(node);
     }
 
@@ -339,6 +337,6 @@ class Deadbolt {
         const node = new AdvancedNode("dynamic", fn);
         return node
     }
-};
+}
 
 module.exports.Deadbolt = Deadbolt;
