@@ -74,67 +74,93 @@ describe("Test Deadbolt", _ => {
 
     describe("Test Simple Use Cases", _ => {
         describe("SingleNode Test", _ => {
-            it("Deadbolt.prototype.subjectPresent: Subject has identifier, subjectPresent -> pass", done => {
-                subject.identifier = "has";
-                const judger = filter.compile(filter.subjectPresent());
-                const result = judger(subject.identifier, [], []);
-                assert.deepStrictEqual(result, true);
-                done();
+            describe("Deadbolt.prototype.subjectPresent", _ => {
+                it("Subject has identifier, subjectPresent -> pass", done => {
+                    subject.identifier = "has";
+                    const judger = filter.compile(filter.subjectPresent());
+                    const result = judger(subject.identifier, [], []);
+                    assert.deepStrictEqual(result, true);
+                    done();
+                });
+
+                it("Subject has no identifier, subjectPresent -> failure", done => {
+                    subject.identifier = "";
+                    const judger = filter.compile(filter.subjectPresent());
+                    const result = judger(subject.identifier, [], []);
+                    assert.deepStrictEqual(result, false);
+                    done();
+                });
             });
 
-            it("Deadbolt.prototype.subjectPresent: Subject has no identifier, subjectPresent -> failure", done => {
-                subject.identifier = "";
-                const judger = filter.compile(filter.subjectPresent());
-                const result = judger(subject.identifier, [], []);
-                assert.deepStrictEqual(result, false);
-                done();
+            describe("Deadbolt.prototype.subjectNotPresent", _ => {
+                it("Subject has identifier, subjectNotPresent -> pass", done => {
+                    subject.identifier = "has";
+                    const judger = filter.compile(filter.subjectNotPresent());
+                    const result = judger(subject.identifier, [], []);
+                    assert.deepStrictEqual(result, true);
+                    done();
+                });
+
+                it("Subject has no identifier, subjectNotPresent -> pass", done => {
+                    subject.identifier = "";
+                    const judger = filter.compile(filter.subjectNotPresent());
+                    const result = judger(subject.identifier, [], []);
+                    assert.deepStrictEqual(result, true);
+                    done();
+                });
             });
 
-            it("Subject has identifier, subjectNotPresent -> pass", done => {
-                subject.identifier = "has";
-                const judger = filter.compile(filter.subjectNotPresent());
-                const result = judger(subject.identifier, [], []);
-                assert.deepStrictEqual(result, true);
-                done();
-            });
+            describe("Deadbolt.prototype.role", _ => {
+                it("Subject has correct role, role -> pass", done => {
+                    subject.roles = ["correct"];
+                    const judger = filter.compile(filter.role("correct"));
+                    const result = judger("", subject.roles, []);
+                    assert.deepStrictEqual(result, true);
+                    done();
+                });
 
-            it("Subject has no identifier, subjectNotPresent -> pass", done => {
-                subject.identifier = "";
-                const judger = filter.compile(filter.subjectNotPresent());
-                const result = judger(subject.identifier, [], []);
-                assert.deepStrictEqual(result, true);
-                done();
-            });
+                it("Subject has no role, role -> failure", done => {
+                    subject.roles = [];
+                    const judger = filter.compile(filter.role("correct"));
+                    const result = judger("", subject.roles, []);
+                    assert.deepStrictEqual(result, false);
+                    done();
+                });
 
-            it("Subject has correct role, role -> pass", done => {
-                subject.roles = ["correct"];
-                const judger = filter.compile(filter.role("correct"));
-                const result = judger("", subject.roles, []);
-                assert.deepStrictEqual(result, true);
-                done();
+                it("Subject has no correct role, role -> failure", done => {
+                    subject.roles = ["nocorrect"];
+                    const judger = filter.compile(filter.role("correct"));
+                    const result = judger("", subject.roles, []);
+                    assert.deepStrictEqual(result, false);
+                    done();
+                });
             });
-
-            it("Subject has no role, role -> failure", done => {
-                subject.roles = [];
-                const judger = filter.compile(filter.role("correct"));
-                const result = judger("", subject.roles, []);
-                assert.deepStrictEqual(result, false);
-                done();
-            });
-
-            it("Subject has no correct role, role -> failure", done => {
-                subject.roles = ["nocorrect"];
-                const judger = filter.compile(filter.role("correct"));
-                const result = judger("", subject.roles, []);
-                assert.deepStrictEqual(result, false);
-                done();
-            });
-
-            it("Subject")
         });
 
         describe("AdvancedNode Test", _ => {
+            describe("Deadbolt.prototype.dynamic", _ => {
+                it("Subject's identifier correspond to dynamic, dynamic -> true", done => {
+                    subject.identifier = "correspond";
+                    const judger = filter.compile(filter.dynamic((identifier, roles, permissions) => {
+                        if (identifier === "correspond") return true;
+                        else return false;
+                    }));
+                    const result = judger(subject.identifier, [], []);
+                    assert.deepStrictEqual(result, true);
+                    done();
+                });
 
+                it("Subject's identifier not correspond to dynamic, dynamic -> false", done => {
+                    subject.identifier = "wrong";
+                    const judger = filter.compile(filter.dynamic((identifier, roles, permissions) => {
+                        if (identifier === "correspond") return true;
+                        else return false;
+                    }));
+                    const result = judger(subject.identifier, [], []);
+                    assert.deepStrictEqual(result, false);
+                    done();
+                });
+            });
         });
     });
 
