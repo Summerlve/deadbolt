@@ -139,7 +139,7 @@ describe("Test Deadbolt", _ => {
 
         describe("AdvancedNode Test", _ => {
             describe("Deadbolt.prototype.dynamic", _ => {
-                it("Subject's identifier correspond to dynamic, dynamic -> true", done => {
+                it("Subject's identifier correspond to dynamic(that callback function return true), dynamic -> pass", done => {
                     subject.identifier = "correspond";
                     const judger = filter.compile(filter.dynamic((identifier, roles, permissions) => {
                         if (identifier === "correspond") return true;
@@ -150,7 +150,7 @@ describe("Test Deadbolt", _ => {
                     done();
                 });
 
-                it("Subject's identifier not correspond to dynamic, dynamic -> false", done => {
+                it("Subject's identifier not correspond to dynamic(that callback function return false), dynamic -> failure", done => {
                     subject.identifier = "wrong";
                     const judger = filter.compile(filter.dynamic((identifier, roles, permissions) => {
                         if (identifier === "correspond") return true;
@@ -160,11 +160,42 @@ describe("Test Deadbolt", _ => {
                     assert.deepStrictEqual(result, false);
                     done();
                 });
+
+                it("when dynamic's callback function return non-boolean value, dynamic -> error", done => {
+                    assert.throws(
+                        _ => {
+                            const judger = filter.compile(filter.dynamic(_ => {
+                                return null;
+                            }));
+
+                            const result = judger("", [], []);
+                        }
+                    )
+                    done();
+                });
+            });
+
+            describe("Deadbolt.prototype.regEx", _ => {
+                it("Subject's identifier correspond to regEx(that callback function return true), regEx -> pass", done => {
+                    subject.identifier = "pass";
+                    const judger = filter.compile(filter.regEx(["identifier", /pa/]));
+                    const result = judger(subject.identifier, [], []);
+                    assert.deepStrictEqual(result, true);
+                    done();
+                });
+
+                it("Subject's identifier not correspond to regEx(that callback function return false), regEx -> failure", done => {
+                    subject.identifier = "failure";
+                    const judger = filter.compile(filter.regEx(["identifier", /pa/]));
+                    const result = judger(subject.identifier, [], []);
+                    assert.deepStrictEqual(result, false);
+                    done();
+                });
             });
         });
     });
 
-    describe("Test and expression", _ => {
+    describe("Test Relation Use Cases", _ => {
         it("Meet the conditions, -> true", done => {
             subject.identifier = "root";
             subject.roles = ["admin", "test", "one", "two"];

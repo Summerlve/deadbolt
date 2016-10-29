@@ -187,7 +187,14 @@ class Deadbolt {
                 case "dynamic": {
                     const value = node.value;
                     return (identifier, roles, permissions) => {
-                        return value(identifier, roles, permissions);
+                        const result = value(identifier, roles, permissions);
+
+                        if (typeof result !== "boolean")
+                        {
+                            throw new Error("dynamic must return boolean value");
+                        }
+
+                        return result;
                     };
                 }
 
@@ -224,6 +231,8 @@ class Deadbolt {
                             default:
                                 throw new Error ("Deadbolt.protptype.regEx()'s kind must in [identifier, role, permission]");
                         }
+
+                        return result;
                     };
                 }
 
