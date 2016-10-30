@@ -7,26 +7,85 @@ const assert = require("assert");
 const Deadbolt = require("../src/Deadbolt.js");
 
 describe("Test Deadbolt", _ => {
+    describe("Test ASTNode", _ => {
+        it("SingleNode: [subjectPresent, subjectNotPresent, role, permission]", done => {
+            const subjectPresent = new SingleNode("subjectPresent", "subjectPresent");
+            assert.strictEqual(subjectPresent.name, "subjectPresent");
+            assert.strictEqual(subjectPresent.value, "subjectPresent");
+            assert.strictEqual(subjectPresent.type, "SingleNode");
+
+            const subjectNotPresent = new SingleNode("subjectNotPresent", "subjectNotPresent");
+            assert.strictEqual(subjectNotPresent.name, "subjectNotPresent");
+            assert.strictEqual(subjectNotPresent.value, "subjectNotPresent");
+            assert.strictEqual(subjectNotPresent.type, "SingleNode");
+
+            const role = new SingleNode("role", "admin");
+            assert.strictEqual(role.name, "role");
+            assert.strictEqual(role.value, "admin");
+            assert.strictEqual(role.type, "SingleNode");
+
+            const permission = new SingleNode("permission", "anything");
+            assert.strictEqual(permission.name, "permission");
+            assert.strictEqual(permission.value, "anything");
+            assert.strictEqual(permission.type, "SingleNode");
+            done();
+        });
+
+        it("AdvancedNode: [dynamic, regEx]", done => {
+            const dynamic = new AdvancedNode("dynamic", _ => true);
+            assert.strictEqual(dynamic.name, "dynamic");
+            assert.strictEqual(dynamic.value.toString(), (_ => true).toString());
+            assert.strictEqual(dynamic.type, "AdvancedNode");
+
+            const regEx = new AdvancedNode("regEx", ["identifier", /identifier/]);
+            assert.strictEqual(regEx.name, "regEx");
+            assert.strictEqual(regEx.value[0], "identifier");
+            assert.strictEqual(regEx.value[1].toString(), "/identifier/");
+            assert.strictEqual(dynamic.type, "AdvancedNode");
+            done();
+        });
+
+        it("RelationshipNode: [and, or, not]", done => {
+            const and = new RelationshipNode("and", []);
+            assert.strictEqual(and.name, "and");
+            assert.strictEqual(and.params.length, 0);
+            assert.strictEqual(and.params instanceof Array, true);
+            assert.strictEqual(and.type, "RelationshipNode");
+
+            const or = new RelationshipNode("or", []);
+            assert.strictEqual(or.name, "or");
+            assert.strictEqual(or.params.length, 0);
+            assert.strictEqual(and.params instanceof Array, true);
+            assert.strictEqual(and.type, "RelationshipNode");
+
+            const not = new RelationshipNode("not", []);
+            assert.strictEqual(not.name, "not");
+            assert.strictEqual(not.params.length, 0);
+            assert.strictEqual(not.params instanceof Array, true);
+            assert.strictEqual(not.type, "RelationshipNode");
+            done();
+        });
+    });
+
     describe("Test fundamental methods on Deadbolt.prototype", _ => {
         it("Deadbolt.prototype.parser", done => {
             const proto = Deadbolt.prototype;
-            const deadbolt = new Deadbolt();
             const desc = {
                 and: [
-                    deadbolt.role("admin"),
-                    deadbolt.permission("anything"),
+                    new SingleNode("role", "admin"),
+                    new SingleNode("permission", "anything"),
                     {
                         or: [
-                            deadbolt.dynamic(_ => true),
+                            new AdvancedNode("dynamic", _ => true),
                             {
                                 and: [
-                                    deadbolt.regEx(["identifier", /admin/])
+                                    new AdvancedNode("regEx", ["identifier", /admin/])
                                 ]
                             },
-                            deadbolt.subjectPresent(),
+                            new SingleNode("subjectPresent", "subjectPresent"),
                             {
                                 not: [
-                                    deadbolt.subjectNotPresent()
+                                    new SingleNode("subjectNotPresent", "subjectNotPresent")
                                 ]
                             }
                         ]
@@ -58,15 +117,18 @@ describe("Test Deadbolt", _ => {
 
         it("Deadbolt.prototype.transformer", done => {
             const proto = Deadbolt.prototype;
-            const deadbolt = new Deadbolt();
             const originalAST = new RootNode([
-
+                new RelationshipNode("and", [
+                    new SingleNode("subjectPresent", "subjectPresent")
+                ])
             ]);
-            const expectedAST = ;
+            const expectedAST = new RelationshipNode("and", [
+                new SingleNode("subjectPresent", "subjectPresent")
+            ]);
             const expectedASTJSON = JSON.stringify(expectedAST);
-            const transformedAST = ;
-            const transformedASTJSON = JSON.stringify(originalAST);
-            assert.strictEqual(originalASTJSON, expectedASTJSON);
+            const transformedAST = proto.transformer(originalAST);
+            const transformedASTJSON = JSON.stringify(transformedAST);
+            assert.strictEqual(transformedASTJSON, expectedASTJSON);
             done();
         });
 
@@ -252,8 +314,8 @@ describe("Test Deadbolt", _ => {
         });
     });
 
-    describe("Test Relation Use Cases", _ => {
-        it("Meet the conditions, -> true", done => {
+    describe("Test Relationship Use Cases", _ => {
+        it("Meet the conditions, -> pass", done => {
             subject.identifier = "root";
             subject.roles = ["admin", "test", "one", "two"];
             subject.permissions = ["delete_everything", "create_something", "do_anything", "do_one", "do_two"];
@@ -282,7 +344,7 @@ describe("Test Deadbolt", _ => {
             done();
         });
 
-        it("Not meets the conditions, -> false", done => {
+        it("Not meets the conditions, -> failure", done => {
             subject.identifier = "fail";
             subject.roles = ["mustFail", "failEveryTime"];
             subject.permissions = ["one", "two"];
@@ -301,4 +363,3 @@ describe("Test Deadbolt", _ => {
         });
     });
 });
-

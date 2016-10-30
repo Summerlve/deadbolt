@@ -133,8 +133,6 @@ class Deadbolt {
         const body = originalAST.body;
         const transformedAST = body[0];
 
-        log.debug(util.inspect(transformedAST, false, null));
-
         return transformedAST;
     }
 

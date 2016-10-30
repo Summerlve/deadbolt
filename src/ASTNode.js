@@ -14,7 +14,7 @@ class RootNode extends Node {
 
 class RelationshipNode extends Node {
     constructor(name, params = []) {
-        super("Relationship", name);
+        super("RelationshipNode", name);
         this.params = params;
     }
 }
