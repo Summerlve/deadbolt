@@ -2,6 +2,7 @@
 
 const log = require("loglevel");
 const util = require("util");
+const { Node, RootNode, RelationshipNode, AdvancedNode, SingleNode } = require("./ASTNode.js");
 
 // set log level by env.
 switch (process.env.NODE_ENV) {
@@ -13,41 +14,6 @@ switch (process.env.NODE_ENV) {
         break;
     default:
         log.setLevel("debug");
-}
-
-class Node {
-    constructor(type, name) {
-        this.type = type;
-        this.name = name;
-    }
-}
-
-class RootNode extends Node {
-    constructor(body = []) {
-        super("RootNode", "RootNode");
-        this.body = body;
-    }
-}
-
-class RelationshipNode extends Node {
-    constructor(name, params = []) {
-        super("Relationship", name);
-        this.params = params;
-    }
-}
-
-class AdvancedNode extends Node {
-    constructor(name, value) {
-        super("AdvancedNode", name);
-        this.value = value;
-    }
-};
-
-class SingleNode extends Node {
-    constructor(name, value) {
-        super("SingleNode" ,name);
-        this.value = value;
-    }
 }
 
 class Deadbolt {
@@ -67,18 +33,14 @@ class Deadbolt {
     }
 
     compile(desc) {
+        // desc -> parser -> transformer -> judgerGenerator -> judger
         const originalAST = this.parser(desc);
-        log.debug(util.inspect(originalAST, false, null));
-
         const transformedAST = this.transformer(originalAST);
         const judger = this.judgerGenerator(transformedAST);
-        log.debug("judger:", judger);
-
         return judger;
     }
 
     parser(desc) {
-        log.debug(util.inspect(desc, false, null));
         const rootNode = new RootNode();
 
         // simple situation , only single restrict.
@@ -348,4 +310,4 @@ class Deadbolt {
     }
 }
 
-module.exports.Deadbolt = Deadbolt;
+module.exports = Deadbolt;

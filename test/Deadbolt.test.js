@@ -2,20 +2,65 @@
 
 process.env.NODE_ENV = "test";
 
+const { Node, RootNode, RelationshipNode, AdvancedNode, SingleNode } = require("../src/ASTNode.js");
 const assert = require("assert");
-const { Deadbolt } = require("../src/Deadbolt.js");
+const Deadbolt = require("../src/Deadbolt.js");
 
 describe("Test Deadbolt", _ => {
     describe("Test fundamental methods on Deadbolt.prototype", _ => {
-        it("Deadbolt.prototype.parser:", done => {
+        it("Deadbolt.prototype.parser", done => {
+            const proto = Deadbolt.prototype;
+            const deadbolt = new Deadbolt();
+            const desc = {
+                and: [
+                    deadbolt.role("admin"),
+                    deadbolt.permission("anything"),
+                    {
+                        or: [
+                            deadbolt.dynamic(_ => true),
+                            {
+                                and: [
+                                    deadbolt.regEx(["identifier", /admin/])
+                                ]
+                            },
+                            deadbolt.subjectPresent(),
+                            {
+                                not: [
+                                    deadbolt.subjectNotPresent()
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            };
+
+            const expectedAST = new RootNode();
+            expectedAST.body.push(new RelationshipNode("and", [
+                proto.role("admin"),
+                proto.permission("anything"),
+                new RelationshipNode("or", [
+                    proto.dynamic(_ => true),
+                    new RelationshipNode ("and", [
+                        proto.regEx(["identifier", /admin/])
+                    ]),
+                    proto.subjectPresent(),
+                    new RelationshipNode("not", [
+                        proto.subjectNotPresent()
+                    ])
+                ])
+            ]));
+            const expectedASTJSON = JSON.stringify(expectedAST);
+            const originalAST = proto.parser(desc);
+            const originalASTJSON = JSON.stringify(originalAST);
+            assert.strictEqual(originalASTJSON, expectedASTJSON);
             done();
         });
 
-        it("Deadbolt.prototype.transformer:", done => {
+        it("Deadbolt.prototype.transformer", done => {
             done();
         });
 
-        it("Deadbolt.prototype.judgerGenerator:", done => {
+        it("Deadbolt.prototype.judgerGenerator", done => {
             done();
         });
     });
@@ -79,7 +124,7 @@ describe("Test Deadbolt", _ => {
                     subject.identifier = "has";
                     const judger = filter.compile(filter.subjectPresent());
                     const result = judger(subject.identifier, [], []);
-                    assert.deepStrictEqual(result, true);
+                    assert.strictEqual(result, true);
                     done();
                 });
 
@@ -87,7 +132,7 @@ describe("Test Deadbolt", _ => {
                     subject.identifier = "";
                     const judger = filter.compile(filter.subjectPresent());
                     const result = judger(subject.identifier, [], []);
-                    assert.deepStrictEqual(result, false);
+                    assert.strictEqual(result, false);
                     done();
                 });
             });
@@ -97,7 +142,7 @@ describe("Test Deadbolt", _ => {
                     subject.identifier = "has";
                     const judger = filter.compile(filter.subjectNotPresent());
                     const result = judger(subject.identifier, [], []);
-                    assert.deepStrictEqual(result, true);
+                    assert.strictEqual(result, true);
                     done();
                 });
 
@@ -105,7 +150,7 @@ describe("Test Deadbolt", _ => {
                     subject.identifier = "";
                     const judger = filter.compile(filter.subjectNotPresent());
                     const result = judger(subject.identifier, [], []);
-                    assert.deepStrictEqual(result, true);
+                    assert.strictEqual(result, true);
                     done();
                 });
             });
@@ -115,7 +160,7 @@ describe("Test Deadbolt", _ => {
                     subject.roles = ["correct"];
                     const judger = filter.compile(filter.role("correct"));
                     const result = judger("", subject.roles, []);
-                    assert.deepStrictEqual(result, true);
+                    assert.strictEqual(result, true);
                     done();
                 });
 
@@ -123,7 +168,7 @@ describe("Test Deadbolt", _ => {
                     subject.roles = [];
                     const judger = filter.compile(filter.role("correct"));
                     const result = judger("", subject.roles, []);
-                    assert.deepStrictEqual(result, false);
+                    assert.strictEqual(result, false);
                     done();
                 });
 
@@ -131,7 +176,7 @@ describe("Test Deadbolt", _ => {
                     subject.roles = ["nocorrect"];
                     const judger = filter.compile(filter.role("correct"));
                     const result = judger("", subject.roles, []);
-                    assert.deepStrictEqual(result, false);
+                    assert.strictEqual(result, false);
                     done();
                 });
             });
@@ -146,7 +191,7 @@ describe("Test Deadbolt", _ => {
                         else return false;
                     }));
                     const result = judger(subject.identifier, [], []);
-                    assert.deepStrictEqual(result, true);
+                    assert.strictEqual(result, true);
                     done();
                 });
 
@@ -157,7 +202,7 @@ describe("Test Deadbolt", _ => {
                         else return false;
                     }));
                     const result = judger(subject.identifier, [], []);
-                    assert.deepStrictEqual(result, false);
+                    assert.strictEqual(result, false);
                     done();
                 });
 
@@ -180,7 +225,7 @@ describe("Test Deadbolt", _ => {
                     subject.identifier = "pass";
                     const judger = filter.compile(filter.regEx(["identifier", /pa/]));
                     const result = judger(subject.identifier, [], []);
-                    assert.deepStrictEqual(result, true);
+                    assert.strictEqual(result, true);
                     done();
                 });
 
@@ -188,7 +233,7 @@ describe("Test Deadbolt", _ => {
                     subject.identifier = "failure";
                     const judger = filter.compile(filter.regEx(["identifier", /pa/]));
                     const result = judger(subject.identifier, [], []);
-                    assert.deepStrictEqual(result, false);
+                    assert.strictEqual(result, false);
                     done();
                 });
             });
@@ -220,7 +265,7 @@ describe("Test Deadbolt", _ => {
             });
 
             const result = judger(subject.identifier, subject.roles, subject.permissions);
-            assert.deepStrictEqual(result, true);
+            assert.strictEqual(result, true);
 
             done();
         });
@@ -238,7 +283,7 @@ describe("Test Deadbolt", _ => {
             });
 
             const result = judger(subject.identifier, subject.roles, subject.permissions);
-            assert.deepStrictEqual(result, false);
+            assert.strictEqual(result, false);
 
             done();
         });
