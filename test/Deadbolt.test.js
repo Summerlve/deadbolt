@@ -57,10 +57,22 @@ describe("Test Deadbolt", _ => {
         });
 
         it("Deadbolt.prototype.transformer", done => {
+            const proto = Deadbolt.prototype;
+            const deadbolt = new Deadbolt();
+            const originalAST = new RootNode([
+
+            ]);
+            const expectedAST = ;
+            const expectedASTJSON = JSON.stringify(expectedAST);
+            const transformedAST = ;
+            const transformedASTJSON = JSON.stringify(originalAST);
+            assert.strictEqual(originalASTJSON, expectedASTJSON);
             done();
         });
 
         it("Deadbolt.prototype.judgerGenerator", done => {
+            const proto = Deadbolt.prototype;
+            const deadbolt = new Deadbolt();
             done();
         });
     });
