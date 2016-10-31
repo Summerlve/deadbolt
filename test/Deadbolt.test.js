@@ -315,51 +315,141 @@ describe("Test Deadbolt", _ => {
     });
 
     describe("Test Relationship Use Cases", _ => {
-        it("Meet the conditions, -> pass", done => {
-            subject.identifier = "root";
-            subject.roles = ["admin", "test", "one", "two"];
-            subject.permissions = ["delete_everything", "create_something", "do_anything", "do_one", "do_two"];
+        describe("and:", _ => {
+            it("Correspond to such conditions: a layer of and -> pass", done => {
+                subject.identifier = "root";
+                subject.roles = ["admin", "test", "one", "two"];
+                subject.permissions = ["delete_everything", "create_something", "do_anything", "do_one", "do_two"];
 
-            const judger = filter.compile({
-                and: [
-                    filter.role("admin"),
-                    filter.role("test"),
-                    filter.role("one"),
-                    filter.dynamic((identifier, roles, permissions) => {
-                        if (permissions.indexOf("do_anything")
-                            && roles.indexOf(("two")))
+                const judger = filter.compile({
+                    and: [
+                        filter.role("admin"),
+                        filter.role("test"),
+                        filter.role("one"),
+                        filter.dynamic((identifier, roles, permissions) => {
+                            if (permissions.indexOf("do_anything")
+                                && roles.indexOf(("two")))
+                            {
+                                return true;
+                            }
+
+                            return false;
+                        }),
+                        filter.permission("create_something")
+                    ]
+                });
+
+                const result = judger(subject.identifier, subject.roles, subject.permissions);
+                assert.strictEqual(result, true);
+
+                done();
+            });
+
+            it("Not correspond to such conditions: a layer of and -> failure", done => {
+                subject.identifier = "fail";
+                subject.roles = ["mustFail", "failEveryTime"];
+                subject.permissions = ["one", "two"];
+
+                const judger = filter.compile({
+                    and: [
+                        filter.role("mustFail"),
+                        filter.permission("thr")
+                    ]
+                });
+
+                const result = judger(subject.identifier, subject.roles, subject.permissions);
+                assert.strictEqual(result, false);
+
+                done();
+            });
+
+            it("Correspond to such conditions: nested much layers of and -> pass", done => {
+                subject.identifier = "pass";
+                subject.roles = ["admin", "root"];
+                subject.permissions = ["anything"];
+
+                const judger = filter.compile({
+                    and: [
+                        filter.dynamic((identifier, roles, permissions) => {
+                            return identifier === "pass";
+                        }),
                         {
-                            return true;
+                            and: [
+                                filter.role("admin"),
+                                {
+                                    and: [
+                                        filter.role("root"),
+                                        {
+                                            and: [
+                                                filter.permission("anything")
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
                         }
+                    ]
+                });
 
-                        return false;
-                    }),
-                    filter.permission("create_something")
-                ]
+                const result = judger(subject.identifier, subject.roles, subject.permissions);
+                assert.strictEqual(result, true);
+                done();
             });
 
-            const result = judger(subject.identifier, subject.roles, subject.permissions);
-            assert.strictEqual(result, true);
+            it("Not correspond to such conditions: nested much layers of and -> pass", done => {
+                subject.identifier = "pass";
+                subject.roles = ["admin", "root"];
+                subject.permissions = ["anything"];
 
-            done();
+                const judger = filter.compile({
+                    and: [
+                        filter.dynamic((identifier, roles, permissions) => {
+                            return identifier === "pass";
+                        }),
+                        {
+                            and: [
+                                filter.role("admin"),
+                                {
+                                    and: [
+                                        filter.role("root"),
+                                        {
+                                            and: [
+                                                filter.permission("something")
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                });
+
+                const result = judger(subject.identifier, subject.roles, subject.permissions);
+                assert.strictEqual(result, false);
+                done();
+            });
         });
 
-        it("Not meets the conditions, -> failure", done => {
-            subject.identifier = "fail";
-            subject.roles = ["mustFail", "failEveryTime"];
-            subject.permissions = ["one", "two"];
+        describe("or", _ => {
+            it("Correspond to such conditions: one layer of or -> pass", done => {
+                subject.identifier = "pass";
+                subject.roles = ["admin", "root"];
+                subject.permissions = ["anything"];
 
-            const judger = filter.compile({
-                and: [
-                    filter.role("mustFail"),
-                    filter.permission("thr")
-                ]
+                const judger = filter.compile({
+                    or: [
+                        filter.role("guest"),
+                        filter.regEx(["identifier", /failure/]),
+                        filter.permission("anything")
+                    ]
+                });
+
+                const result = judger(subject.identifier, subject.roles, subject.permissions);
+                assert.strictEqual(result, true);
+                done();
             });
 
-            const result = judger(subject.identifier, subject.roles, subject.permissions);
-            assert.strictEqual(result, false);
-
-            done();
+            it()
         });
-    });
+   });
 });
