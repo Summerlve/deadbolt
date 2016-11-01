@@ -396,7 +396,7 @@ describe("Test Deadbolt", _ => {
                 done();
             });
 
-            it("Not correspond to such conditions: nested much layers of and -> pass", done => {
+            it("Not correspond to such conditions: nested much layers of and -> failure", done => {
                 subject.identifier = "pass";
                 subject.roles = ["admin", "root"];
                 subject.permissions = ["anything"];
@@ -430,7 +430,7 @@ describe("Test Deadbolt", _ => {
             });
         });
 
-        describe("or", _ => {
+        describe("or:", _ => {
             it("Correspond to such conditions: one layer of or -> pass", done => {
                 subject.identifier = "pass";
                 subject.roles = ["admin", "root"];
@@ -449,7 +449,188 @@ describe("Test Deadbolt", _ => {
                 done();
             });
 
-            it()
+            it("Not Correspond to such conditions: one layer of or -> failure", done => {
+                subject.identifier = "failure";
+                subject.roles = ["guest", "normal"];
+                subject.permissions = ["something", "read"];
+
+                const judger = filter.compile({
+                    or: [
+                        filter.dynamic((identifier, roles, permissions) => {
+                            return identifier === "pass";
+                        }),
+                        filter.role("admin"),
+                        filter.role("root"),
+                        filter.permission("anything"),
+                        filter.regEx(["permission", /any/])
+                    ]
+                });
+
+                const result = judger(subject.identifier, subject.roles, subject.permissions);
+                assert.strictEqual(result, false);
+                done();
+            });
+
+            it("Correspond to such conditions: nested much layers of or -> pass", done => {
+                subject.identifier = "failure";
+                subject.roles = ["guest", "normal"];
+                subject.permissions = ["something", "read"];
+
+                const judger = filter.compile({
+                    or: [
+                        filter.role("root"),
+                        {
+                            or: [
+                                filter.role("admin"),
+                                filter.permission("anything"),
+                                {
+                                    or: [
+                                        filter.permission("read")
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                });
+
+                const result = judger(subject.identifier, subject.roles, subject.permissions);
+                assert.strictEqual(result, true);
+                done();
+            });
+
+            it("Not correspond to such conditions: nested much layers of or -> failure", done => {
+                subject.identifier = "failure";
+                subject.roles = ["guest", "normal"];
+                subject.permissions = ["something", "read"];
+
+                const judger = filter.compile({
+                    or: [
+                        filter.role("root"),
+                        {
+                            or: [
+                                filter.role("admin"),
+                                filter.permission("anything"),
+                                {
+                                    or: [
+                                        filter.permission("write")
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                });
+
+                const result = judger(subject.identifier, subject.roles, subject.permissions);
+                assert.strictEqual(result, false);
+                done();
+            });
+        });
+
+        describe("not:", _ => {
+            it("Correspond to such conditions: one layer of not -> pass", done => {
+                subject.identifier = "pass";
+                subject.roles = ["admin", "root"];
+                subject.permissions = ["anything", "all"];
+
+                const judger = filter.compile({
+                    not: [
+                        filter.dynamic((identifier, roles, permissions) => {
+                            return identifier === "failure";
+                        }),
+                        filter.role("guest"),
+                        filter.role("normal"),
+                        filter.permission("something"),
+                        filter.permission("none")
+                    ]
+                });
+
+                const result = judger(subject.identifier, subject.roles, subject.permissions);
+                assert.strictEqual(result, true);
+                done();
+            });
+
+            it("Not correspond to such conditions: one layer of not -> failure", done => {
+                subject.identifier = "pass";
+                subject.roles = ["admin", "root"];
+                subject.permissions = ["anything", "all"];
+
+                const judger = filter.compile({
+                    not: [
+                        filter.dynamic((identifier, roles, permissions) => {
+                            return identifier === "failure";
+                        }),
+                        filter.role("guest"),
+                        filter.role("normal"),
+                        filter.permission("something"),
+                        filter.permission("all")
+                    ]
+                });
+
+                const result = judger(subject.identifier, subject.roles, subject.permissions);
+                assert.strictEqual(result, false);
+                done();
+            });
+
+            it("Correspond to such conditions: nested much layers of not -> pass", done => {
+                subject.identifier = "pass";
+                subject.roles = ["admin", "root"];
+                subject.permissions = ["anything", "all"];
+
+                const judger = filter.compile({
+                    not: [
+                        filter.dynamic((identifier, roles, permissions) => {
+                            return identifier === "failure";
+                        }),
+                        {
+                            not: [
+                                filter.role("guest"),
+                                {
+                                    not: [
+                                        filter.permission("something")
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                });
+
+                const result = judger(subject.identifier, subject.roles, subject.permissions);
+                assert.strictEqual(result, true);
+                done();
+            });
+
+            it("Not correspond to such conditions: nested much layers of not -> failure", done => {
+                subject.identifier = "pass";
+                subject.roles = ["admin", "root"];
+                subject.permissions = ["anything", "all"];
+
+                const judger = filter.compile({
+                    not: [
+                        filter.dynamic((identifier, roles, permissions) => {
+                            return identifier !== "failure";
+                        }),
+                        {
+                            not: [
+                                filter.role("guest"),
+                                {
+                                    not: [
+                                        filter.permission("something"),
+                                        {
+                                            not: [
+                                                filter.regEx(["permission", /all/])
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                });
+
+                const result = judger(subject.identifier, subject.roles, subject.permissions);
+                assert.strictEqual(result, false);
+                done();
+            });
         });
    });
 });
