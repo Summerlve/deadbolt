@@ -3,6 +3,7 @@
 const log = require("loglevel");
 const util = require("util");
 const { Node, RootNode, RelationshipNode, AdvancedNode, SingleNode } = require("./ASTNode.js");
+const ExpressDriver = require("../driver/express.driver.js");
 
 // set log level by env.
 switch (process.env.NODE_ENV) {
@@ -17,19 +18,19 @@ switch (process.env.NODE_ENV) {
 }
 
 class Deadbolt {
-    constructor(deadboltHandler) {
+    constructor(deadboltHandler, driver = ExpressDriver) {
         this.deadboltHandler = deadboltHandler;
+        this.driver = driver;
+    }
+
+    setCustomDriver(driver) {
+        this.driver = driver;
     }
 
     restrict(desc) {
         const judger = this.compile(desc);
-
-        return (req, res, next) => {
-            let subject = this.deadboltHandler.getSubject(req, res, next);
-            let identifier = subject.identifier;
-            let roles = subject.roles;
-            let permissions = subject.permissions;
-        };
+        const driver = this.driver;
+        return this.driver(judger);
     }
 
     compile(desc) {
@@ -151,7 +152,7 @@ class Deadbolt {
 
                         if (typeof result !== "boolean")
                         {
-                            throw new Error("dynamic must return boolean value");
+                            throw new Error("Deadbolt.prototype.dynamic's callback function must return boolean value");
                         }
 
                         return result;

@@ -10,21 +10,25 @@ describe("Test Deadbolt", _ => {
     describe("Test ASTNode", _ => {
         it("SingleNode: [subjectPresent, subjectNotPresent, role, permission]", done => {
             const subjectPresent = new SingleNode("subjectPresent", "subjectPresent");
+            assert.strictEqual(subjectPresent instanceof SingleNode, true);
             assert.strictEqual(subjectPresent.name, "subjectPresent");
             assert.strictEqual(subjectPresent.value, "subjectPresent");
             assert.strictEqual(subjectPresent.type, "SingleNode");
 
             const subjectNotPresent = new SingleNode("subjectNotPresent", "subjectNotPresent");
+            assert.strictEqual(subjectNotPresent instanceof SingleNode, true);
             assert.strictEqual(subjectNotPresent.name, "subjectNotPresent");
             assert.strictEqual(subjectNotPresent.value, "subjectNotPresent");
             assert.strictEqual(subjectNotPresent.type, "SingleNode");
 
             const role = new SingleNode("role", "admin");
+            assert.strictEqual(role instanceof SingleNode, true);
             assert.strictEqual(role.name, "role");
             assert.strictEqual(role.value, "admin");
             assert.strictEqual(role.type, "SingleNode");
 
             const permission = new SingleNode("permission", "anything");
+            assert.strictEqual(permission instanceof SingleNode, true);
             assert.strictEqual(permission.name, "permission");
             assert.strictEqual(permission.value, "anything");
             assert.strictEqual(permission.type, "SingleNode");
@@ -33,11 +37,13 @@ describe("Test Deadbolt", _ => {
 
         it("AdvancedNode: [dynamic, regEx]", done => {
             const dynamic = new AdvancedNode("dynamic", _ => true);
+            assert.strictEqual(dynamic instanceof AdvancedNode, true);
             assert.strictEqual(dynamic.name, "dynamic");
             assert.strictEqual(dynamic.value.toString(), (_ => true).toString());
             assert.strictEqual(dynamic.type, "AdvancedNode");
 
             const regEx = new AdvancedNode("regEx", ["identifier", /identifier/]);
+            assert.strictEqual(regEx instanceof AdvancedNode, true);
             assert.strictEqual(regEx.name, "regEx");
             assert.strictEqual(regEx.value[0], "identifier");
             assert.strictEqual(regEx.value[1].toString(), "/identifier/");
@@ -47,18 +53,21 @@ describe("Test Deadbolt", _ => {
 
         it("RelationshipNode: [and, or, not]", done => {
             const and = new RelationshipNode("and", []);
+            assert.strictEqual(and instanceof RelationshipNode, true);
             assert.strictEqual(and.name, "and");
             assert.strictEqual(and.params.length, 0);
             assert.strictEqual(and.params instanceof Array, true);
             assert.strictEqual(and.type, "RelationshipNode");
 
             const or = new RelationshipNode("or", []);
+            assert.strictEqual(or instanceof RelationshipNode, true);
             assert.strictEqual(or.name, "or");
             assert.strictEqual(or.params.length, 0);
             assert.strictEqual(and.params instanceof Array, true);
             assert.strictEqual(and.type, "RelationshipNode");
 
             const not = new RelationshipNode("not", []);
+            assert.strictEqual(not instanceof RelationshipNode, true);
             assert.strictEqual(not.name, "not");
             assert.strictEqual(not.params.length, 0);
             assert.strictEqual(not.params instanceof Array, true);
@@ -95,16 +104,16 @@ describe("Test Deadbolt", _ => {
 
             const expectedAST = new RootNode();
             expectedAST.body.push(new RelationshipNode("and", [
-                proto.role("admin"),
-                proto.permission("anything"),
+                new SingleNode("role", "admin"),
+                new SingleNode("permission", "anything"),
                 new RelationshipNode("or", [
-                    proto.dynamic(_ => true),
+                    new AdvancedNode("dynamic", _ => true),
                     new RelationshipNode ("and", [
-                        proto.regEx(["identifier", /admin/])
+                        new AdvancedNode("regEx", ["identifier", /admin/])
                     ]),
-                    proto.subjectPresent(),
+                    new SingleNode("subjectPresent", "subjectPresent"),
                     new RelationshipNode("not", [
-                        proto.subjectNotPresent()
+                        new SingleNode("subjectNotPresent", "subjectNotPresent")
                     ])
                 ])
             ]));
@@ -134,7 +143,64 @@ describe("Test Deadbolt", _ => {
 
         it("Deadbolt.prototype.judgerGenerator", done => {
             const proto = Deadbolt.prototype;
-            const deadbolt = new Deadbolt();
+            const node = new RelationshipNode("and", [
+                new SingleNode("subjectPresent", "subjectPresent")
+            ]);
+            const judger = proto.judgerGenerator(node);
+            assert.strictEqual(typeof judger, "function");
+            assert.strictEqual(judger.length, 3);
+            assert.strictEqual(false, judger("", [], []));
+            done();
+        });
+
+        it("Deadbolt.prototype.compile", done => {
+            const proto = Deadbolt.prototype;
+            const desc = {
+                and: [
+                    new SingleNode("subjectPresent", "subjectPresent")
+                ]
+            };
+            const judger = proto.compile(desc);
+            assert.strictEqual(typeof judger, "function");
+            assert.strictEqual(judger.length, 3);
+            assert.strictEqual(false, judger("", [], []));
+            done();
+        });
+    });
+
+    describe("Test node generator method on Deadbolt.prototype", _ => {
+        it("Deadbolt.prototype.subjectPresent", done => {
+            const proto = Deadbolt.prototype;
+            const subjectPresent = proto.subjectPresent();
+            assert.strictEqual(subjectPresent instanceof SingleNode, true);
+            assert.strictEqual(subjectPresent.type, "SingleNode");
+            assert.strictEqual(subjectPresent.name, "subjectPresent");
+            assert.strictEqual(subjectPresent.value, "subjectPresent");
+            done();
+        });
+
+        it("Deadbolt.prototype.subjectNotPresent", done => {
+
+            done();
+        });
+
+        it("Deadbolt.prototype.role", done => {
+
+            done();
+        });
+
+        it("Deadbolt.prototype.permission", done => {
+
+            done();
+        });
+
+        it("Deadbolt.prototype.regEx", done => {
+
+            done();
+        });
+
+        it("Deadbolt.prototype.dynamic", done => {
+
             done();
         });
     });
@@ -145,11 +211,11 @@ describe("Test Deadbolt", _ => {
         }
 
         beforeAuthCheck(req, res, next) {
-            console.log("beforeAuthCheck");
+            return "beforeAuthCheck";
         }
 
         onAuthFailure(req, res, next) {
-            console.log("onAuthFailure");
+            return "onAuthFailure";
         }
 
         set subject(subject) {
@@ -632,5 +698,33 @@ describe("Test Deadbolt", _ => {
                 done();
             });
         });
-   });
+    });
+
+    describe("Test Driver", _ => {
+        it("Deadbolt.prototype.restrict", done => {
+            const proto = Deadbolt.prototype;
+            const desc = {
+                and: [
+                    new SingleNode("role", "admin")
+                ]
+            };
+            //const restricter = proto.restrict(desc);
+
+            done();
+        });
+
+        it("Express Driver", done => {
+            done();
+        });
+    });
+
+    describe("Test hook", _ => {
+        it("beforeAuthCheck hook", done => {
+            done();
+        });
+
+        it("onAuthFailure hook", done => {
+            done();
+        });
+    });
 });
