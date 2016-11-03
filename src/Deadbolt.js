@@ -30,7 +30,7 @@ class Deadbolt {
     restrict(desc) {
         const judger = this.compile(desc);
         const driver = this.driver;
-        return this.driver(judger);
+        return this.driver(deadboltHandler, judger);
     }
 
     compile(desc) {

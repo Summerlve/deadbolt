@@ -3,6 +3,7 @@
 process.env.NODE_ENV = "test";
 
 const { Node, RootNode, RelationshipNode, AdvancedNode, SingleNode } = require("../src/ASTNode.js");
+const ExpressDriver = require("../driver/express.driver.js");
 const assert = require("assert");
 const Deadbolt = require("../src/Deadbolt.js");
 
@@ -180,27 +181,53 @@ describe("Test Deadbolt", _ => {
         });
 
         it("Deadbolt.prototype.subjectNotPresent", done => {
-
+            const proto = Deadbolt.prototype;
+            const subjectNotPresent = proto.subjectNotPresent();
+            assert.strictEqual(subjectNotPresent instanceof SingleNode, true);
+            assert.strictEqual(subjectNotPresent.type, "SingleNode");
+            assert.strictEqual(subjectNotPresent.name, "subjectNotPresent");
+            assert.strictEqual(subjectNotPresent.value, "subjectNotPresent");
             done();
         });
 
         it("Deadbolt.prototype.role", done => {
-
+            const proto = Deadbolt.prototype;
+            const role = proto.role("admin");
+            assert.strictEqual(role instanceof SingleNode, true);
+            assert.strictEqual(role.type, "SingleNode");
+            assert.strictEqual(role.name, "role");
+            assert.strictEqual(role.value, "admin");
             done();
         });
 
         it("Deadbolt.prototype.permission", done => {
-
+            const proto = Deadbolt.prototype;
+            const permission = proto.permission("something");
+            assert.strictEqual(permission instanceof SingleNode, true);
+            assert.strictEqual(permission.type, "SingleNode");
+            assert.strictEqual(permission.name, "permission");
+            assert.strictEqual(permission.value, "something");
             done();
         });
 
         it("Deadbolt.prototype.regEx", done => {
-
+            const proto = Deadbolt.prototype;
+            const regEx = proto.regEx(["identifier", /identifier/]);
+            assert.strictEqual(regEx instanceof AdvancedNode, true);
+            assert.strictEqual(regEx.type, "AdvancedNode");
+            assert.strictEqual(regEx.name, "regEx");
+            assert.strictEqual(regEx.value[0], "identifier");
+            assert.strictEqual(regEx.value[1].toString(), "/identifier/");
             done();
         });
 
         it("Deadbolt.prototype.dynamic", done => {
-
+            const proto = Deadbolt.prototype;
+            const dynamic = proto.dynamic(_ => true);
+            assert.strictEqual(dynamic instanceof AdvancedNode, true);
+            assert.strictEqual(dynamic.type, "AdvancedNode");
+            assert.strictEqual(dynamic.name, "dynamic");
+            assert.strictEqual(dynamic.value.toString(), "_ => true");
             done();
         });
     });
@@ -228,6 +255,18 @@ describe("Test Deadbolt", _ => {
     };
 
     class Subject {
+        getIdentifier() {
+            return this._identifier;
+        }
+
+        getRoles() {
+            return this._roles;
+        }
+
+        getPermissions() {
+            return this._permissions;
+        }
+
         set identifier(identifier) {
             this._identifier = identifier;
         }
@@ -702,28 +741,62 @@ describe("Test Deadbolt", _ => {
 
     describe("Test Driver", _ => {
         it("Deadbolt.prototype.restrict", done => {
-            const proto = Deadbolt.prototype;
-            const desc = {
-                and: [
-                    new SingleNode("role", "admin")
-                ]
-            };
-            //const restricter = proto.restrict(desc);
-
             done();
         });
 
         it("Express Driver", done => {
-            done();
-        });
-    });
+            const proto = Deadbolt.prototype;
+            let desc = {
+                and: [
+                    new SingleNode("role", "admin")
+                ]
+            };
 
-    describe("Test hook", _ => {
-        it("beforeAuthCheck hook", done => {
-            done();
-        });
+            let judger = proto.compile(desc);
+            const deadboltHandler = {
+                getSubject(req, res, next) {
+                    return {
+                        getIdentifier() {
+                            return "lzsb";
+                        },
+                        getRoles() {
+                            return ["admin", "root"];
+                        },
+                        getPermissions() {
+                            return ["anything", "everything"];
+                        }
+                    };
+                },
+                beforeAuthCheck(req, res, next) {
+                    req.bac = "beforeAuthCheck";
+                },
+                onAuthFailure(req, res, next) {
+                    req.oaf = "onAuthFailure";
+                }
+            };
 
-        it("onAuthFailure hook", done => {
+            let driverGen = ExpressDriver(deadboltHandler, judger);
+            const req = {};
+            const res = {};
+            const nextX = {};
+            const next = _ => nextX.touch = true;
+
+            driverGen(req, res, next);
+            assert.strictEqual(req.bac, "beforeAuthCheck");
+            assert.strictEqual(nextX.touch, true);
+
+            nextX.touch = false;
+            desc = {
+                and: [
+                    new SingleNode("role", "god")
+                ]
+            };
+            judger = proto.compile(desc);
+            driverGen = ExpressDriver(deadboltHandler, judger);
+            driverGen(req, res, next);
+            assert.strictEqual(req.bac, "beforeAuthCheck");
+            assert.strictEqual(req.oaf, "onAuthFailure");
+            assert.strictEqual(nextX.touch, false);
             done();
         });
     });
