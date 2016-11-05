@@ -739,10 +739,28 @@ describe("Test Deadbolt", _ => {
         });
     });
 
-    describe("Test Driver", _ => {
-        it("Deadbolt.prototype.restrict", done => {
-            done();
-        });
+    describe("Test Driver, Deadbolt.prototype.restrict, Deadbolt's constructor", _ => {
+        const deadboltHandler = {
+            getSubject(req, res, next) {
+                return {
+                    getIdentifier() {
+                        return "lzsb";
+                    },
+                    getRoles() {
+                        return ["admin", "root"];
+                    },
+                    getPermissions() {
+                        return ["anything", "everything"];
+                    }
+                };
+            },
+            beforeAuthCheck(req, res, next) {
+                req.bac = "beforeAuthCheck";
+            },
+            onAuthFailure(req, res, next) {
+                req.oaf = "onAuthFailure";
+            }
+        };
 
         it("Express Driver", done => {
             const proto = Deadbolt.prototype;
@@ -753,28 +771,6 @@ describe("Test Deadbolt", _ => {
             };
 
             let judger = proto.compile(desc);
-            const deadboltHandler = {
-                getSubject(req, res, next) {
-                    return {
-                        getIdentifier() {
-                            return "lzsb";
-                        },
-                        getRoles() {
-                            return ["admin", "root"];
-                        },
-                        getPermissions() {
-                            return ["anything", "everything"];
-                        }
-                    };
-                },
-                beforeAuthCheck(req, res, next) {
-                    req.bac = "beforeAuthCheck";
-                },
-                onAuthFailure(req, res, next) {
-                    req.oaf = "onAuthFailure";
-                }
-            };
-
             let driverGen = ExpressDriver(deadboltHandler, judger);
             const req = {};
             const res = {};
@@ -782,6 +778,7 @@ describe("Test Deadbolt", _ => {
             const next = _ => nextX.touch = true;
 
             driverGen(req, res, next);
+            assert.strictEqual(driverGen.length, 3);
             assert.strictEqual(req.bac, "beforeAuthCheck");
             assert.strictEqual(nextX.touch, true);
 
@@ -794,9 +791,41 @@ describe("Test Deadbolt", _ => {
             judger = proto.compile(desc);
             driverGen = ExpressDriver(deadboltHandler, judger);
             driverGen(req, res, next);
+            assert.strictEqual(driverGen.length, 3);
             assert.strictEqual(req.bac, "beforeAuthCheck");
             assert.strictEqual(req.oaf, "onAuthFailure");
             assert.strictEqual(nextX.touch, false);
+            done();
+        });
+
+        it("Deadbolt's constructor", done => {
+            let deadbolt = new Deadbolt(deadboltHandler, ExpressDriver);
+            assert.strictEqual(deadbolt.deadboltHandler, deadboltHandler);
+            assert.strictEqual(deadbolt.driver. ExpressDriver);
+            deadbolt = new Deadbolt(deadboltHandler);
+            assert.strictEqual(deadbolt.deadboltHandler, deadboltHandler);
+            assert.strictEqual(deadbolt.driver. ExpressDriver);
+            done();
+        });
+
+        it("Deadbolt.prototype.restrict", done => {
+            const deadbolt = new Deadbolt(deadboltHandler);
+            const desc = {
+                and: [
+                    new SingleNode("role", "admin")
+                ]
+            };
+
+            let driverGen = deadbolt.restrict(desc);
+            const req = {};
+            const res = {};
+            const nextX = {};
+            const next = _ => nextX.touch = true;
+
+            driverGen(req, res, next);
+            assert.strictEqual(driverGen.length, 3);
+            assert.strictEqual(req.bac, "beforeAuthCheck");
+            assert.strictEqual(nextX.touch, true);
             done();
         });
     });
