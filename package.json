@@ -1,10 +1,10 @@
 {
   "name": "express-deadbolt",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "rbac filter for express",
-  "main": "index.js",
+  "main": "./src/Deadbolt.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha ./test/Deadbolt.test.js"
   },
   "keywords": [
     "rbac"
@@ -13,5 +13,12 @@
   "license": "MIT",
   "dependencies": {
     "loglevel": "^1.4.1"
+  },
+  "engines": {
+    "node": ">= 6.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Summerlve/deadbolt"
   }
 }
