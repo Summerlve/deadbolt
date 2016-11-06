@@ -3,9 +3,9 @@ var express = require('express');
 var router = express.Router();
 
 /* GET home page. */
-router.get('/root', function(req, res, next) {
-  res.myContent += 'root ';
-  res.render('root', { title: res.myContent });
+router.get('/login', function(req, res, next) {
+  req.session.access = true;
+  res.send('login');
 });
 
 module.exports = router;
