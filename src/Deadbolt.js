@@ -277,6 +277,17 @@ class Deadbolt {
         }
     }
 
+    and(value) {
+    }
+
+    or(value) {
+
+    }
+
+    not(value) {
+
+    }
+
     subjectPresent() {
         const node = new SingleNode("subjectPresent", "subjectPresent");
         return node;
