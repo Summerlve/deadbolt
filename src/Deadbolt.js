@@ -40,23 +40,46 @@ class Deadbolt {
         return judger;
     }
 
-    parser(desc) {
-        const rootNode = new RootNode();
-
+    // mode consists ["single", "relation"]
+    // if a single use case here
+    parser(desc, mode = "single") {
         // simple situation , only single restrict.
         // if [or, and ,not] passed in, it's not instanceof Node.
         if (desc instanceof Node)
         {
+            let rootNode = {};
+
+            if (mode === "single") rootNode = new RootNode();
+            if (mode === "relation") rootNode = null;
+
             if (desc.type === "AdvancedNode")
             {
                 switch (desc.name) {
                     case "dynamic":
-                        rootNode.body.push(desc);
-                        return rootNode;
+                        if (mode === "single")
+                        {
+                            rootNode.body.push(desc);
+                            return rootNode;
+                        }
+
+                        if (mode === "relation")
+                        {
+                            return desc;
+                        }
+                        break;
 
                     case "regEx":
-                        rootNode.body.push(desc);
-                        return rootNode;
+                        if (mode === "single")
+                        {
+                            rootNode.body.push(desc);
+                            return rootNode;
+                        }
+
+                        if (mode === "relation")
+                        {
+                            return desc;
+                        }
+                        break;
 
                     default:
                         throw new Error(`AdvancedNode have no ${desc.name} node type.`);
@@ -66,28 +89,133 @@ class Deadbolt {
             {
                 switch (desc.name) {
                     case "subjectPresent":
-                        rootNode.body.push(desc);
-                        return rootNode;
+                        if (mode === "single")
+                        {
+                            rootNode.body.push(desc);
+                            return rootNode;
+                        }
+
+                        if (mode === "relation")
+                        {
+                            return desc;
+                        }
+                        break;
 
                     case "subjectNotPresent":
-                        rootNode.body.push(desc);
-                        return rootNode;
+                        if (mode === "single")
+                        {
+                            rootNode.body.push(desc);
+                            return rootNode;
+                        }
+
+                        if (mode === "relation")
+                        {
+                            return desc;
+                        }
+                        break;
 
                     case "role":
-                        rootNode.body.push(desc);
-                        return rootNode;
+                        if (mode === "single")
+                        {
+                            rootNode.body.push(desc);
+                            return rootNode;
+                        }
+
+                        if (mode === "relation")
+                        {
+                            return desc;
+                        }
+                        break;
 
                     case "permission":
-                        rootNode.body.push(desc);
-                        return rootNode;
+                        if (mode === "single")
+                        {
+                            rootNode.body.push(desc);
+                            return rootNode;
+                        }
+
+                        if (mode === "relation")
+                        {
+                            return desc;
+                        }
+                        break;
 
                     default:
                         throw new Error(`SingleNode have no ${desc.name} node type.`);
                 }
             }
+            else if (desc.type === "RelationshipNode")
+            {
+                switch (desc.name) {
+                    case "and": {
+                        const params = desc.params;
+                        const middleProduct = params.map(param => {
+                            if (param instanceof RelationshipNode)
+                            {
+                               return this.parser(param, "relation");
+                            }
+
+                            if (param instanceof SingleNode) return this.parser(param, "relation");
+                            if (param instanceof AdvancedNode) return this.parser(param, "relation");
+                        });
+
+                        desc.params = middleProduct;
+
+                        if (mode === "relation") return desc;
+                        if (mode === "single")
+                        {
+                            rootNode.body.push(desc);
+                        }
+                    }   break;
+
+                    case "or": {
+                        const params = desc.params;
+                        const middleProduct = params.map(param => {
+                            if (param instanceof RelationshipNode)
+                            {
+                               return this.parser(param, "relation");
+                            }
+
+                            if (param instanceof SingleNode) return this.parser(param, "relation");
+                            if (param instanceof AdvancedNode) return this.parser(param, "relation");
+                        });
+
+                        desc.params = middleProduct;
+
+                        if (mode === "relation") return desc;
+                        if (mode === "single")
+                        {
+                            rootNode.body.push(desc);
+                        }
+                    }   break;
+
+                    case "not": {
+                        const params = desc.params;
+                        const middleProduct = params.map(param => {
+                            if (param instanceof RelationshipNode)
+                            {
+                               return this.parser(param, "relation");
+                            }
+
+                            if (param instanceof SingleNode) return this.parser(param, "relation");
+                            if (param instanceof AdvancedNode) return this.parser(param, "relation");
+                        });
+
+                        desc.params = middleProduct;
+
+                        if (mode === "relation") return desc;
+                        if (mode === "single")
+                        {
+                            rootNode.body.push(desc);
+                        }
+                    }   break;
+
+                    default:
+                        throw new Error("RelationshipNode's name in [and, or, not]");
+                }
+            }
         }
 
-        rootNode.body.push(this.walk(desc));
         return rootNode;
     }
 
@@ -156,7 +284,7 @@ class Deadbolt {
 
                         return result;
                     };
-                }
+                }   break;
 
                 case "regEx": {
                     const value = node.value;
@@ -194,7 +322,7 @@ class Deadbolt {
 
                         return result;
                     };
-                }
+                }   break;
 
                 default:
                     throw new Error("AdvancedNode's name must in [dynamic, regEx]");
@@ -209,25 +337,25 @@ class Deadbolt {
                         if (identifier) return true;
                         else return false;
                     };
-                }
+                }   break;
 
                 case "subjectNotPresent": {
                     return (identifier, roles, permissions) => true;
-                }
+                }   break;
 
                 case "role": {
                     const value = node.value;
                     return (identifier, roles, permissions) => {
                         return roles.includes(value);
                     };
-                }
+                }   break;
 
                 case "permission": {
                     const value = node.value;
                     return (identifier, roles, permissions) => {
                         return permissions.includes(value);
                     };
-                }
+                }   break;
 
                 default:
                     throw new Error("SingleNode's name must in [subjectPresent, subjectNotPresent, role, permission]");
@@ -248,7 +376,7 @@ class Deadbolt {
                             return pv || cv(identifier, roles, permissions);
                         }, result);
                     };
-                }
+                } break;
 
                 case "and": {
                     const params = node.params;
@@ -260,7 +388,7 @@ class Deadbolt {
                             return pv && cv(identifier, roles, permissions);
                         }, result);
                     };
-                }
+                }   break;
 
                 case "not": {
                     const params = node.params;
@@ -272,19 +400,24 @@ class Deadbolt {
                             return pv && !cv(identifier, roles, permissions);
                         }, result);
                     };
-                }
+                } break;
+
+                default:
+                    throw new Error("RelationshipNode's name must in [and, not, or]");
             }
         }
     }
 
     and(value) {
+        return new RelationshipNode("and", value);
     }
 
     or(value) {
-
+        return new RelationshipNode("or", value);
     }
 
     not(value) {
+        return new RelationshipNode("not", value);
 
     }
 
