@@ -47,17 +47,13 @@ class Deadbolt {
         // if [or, and ,not] passed in, it's not instanceof Node.
         if (desc instanceof Node)
         {
-            let rootNode = {};
-
-            if (mode === "single") rootNode = new RootNode();
-            if (mode === "relation") rootNode = null;
-
             if (desc.type === "AdvancedNode")
             {
                 switch (desc.name) {
                     case "dynamic":
                         if (mode === "single")
                         {
+                            const rootNode = new RootNode();
                             rootNode.body.push(desc);
                             return rootNode;
                         }
@@ -71,6 +67,7 @@ class Deadbolt {
                     case "regEx":
                         if (mode === "single")
                         {
+                            const rootNode = new RootNode();
                             rootNode.body.push(desc);
                             return rootNode;
                         }
@@ -91,6 +88,7 @@ class Deadbolt {
                     case "subjectPresent":
                         if (mode === "single")
                         {
+                            const rootNode = new RootNode();
                             rootNode.body.push(desc);
                             return rootNode;
                         }
@@ -104,6 +102,7 @@ class Deadbolt {
                     case "subjectNotPresent":
                         if (mode === "single")
                         {
+                            const rootNode = new RootNode();
                             rootNode.body.push(desc);
                             return rootNode;
                         }
@@ -117,6 +116,7 @@ class Deadbolt {
                     case "role":
                         if (mode === "single")
                         {
+                            const rootNode = new RootNode();
                             rootNode.body.push(desc);
                             return rootNode;
                         }
@@ -130,6 +130,7 @@ class Deadbolt {
                     case "permission":
                         if (mode === "single")
                         {
+                            const rootNode = new RootNode();
                             rootNode.body.push(desc);
                             return rootNode;
                         }
@@ -164,7 +165,9 @@ class Deadbolt {
                         if (mode === "relation") return desc;
                         if (mode === "single")
                         {
+                            const rootNode = new RootNode();
                             rootNode.body.push(desc);
+                            return rootNode;
                         }
                     }   break;
 
@@ -185,7 +188,9 @@ class Deadbolt {
                         if (mode === "relation") return desc;
                         if (mode === "single")
                         {
+                            const rootNode = new RootNode();
                             rootNode.body.push(desc);
+                            return rootNode;
                         }
                     }   break;
 
@@ -206,7 +211,9 @@ class Deadbolt {
                         if (mode === "relation") return desc;
                         if (mode === "single")
                         {
+                            const rootNode = new RootNode();
                             rootNode.body.push(desc);
+                            return rootNode;
                         }
                     }   break;
 
@@ -215,8 +222,6 @@ class Deadbolt {
                 }
             }
         }
-
-        return rootNode;
     }
 
     walk(desc) {

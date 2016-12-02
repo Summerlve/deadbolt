@@ -80,28 +80,20 @@ describe("Test Deadbolt", _ => {
     describe("Test fundamental methods on Deadbolt.prototype", _ => {
         it("Deadbolt.prototype.parser", done => {
             const proto = Deadbolt.prototype;
-            const desc = {
-                and: [
-                    new SingleNode("role", "admin"),
-                    new SingleNode("permission", "anything"),
-                    {
-                        or: [
-                            new AdvancedNode("dynamic", _ => true),
-                            {
-                                and: [
-                                    new AdvancedNode("regEx", ["identifier", /admin/])
-                                ]
-                            },
-                            new SingleNode("subjectPresent", "subjectPresent"),
-                            {
-                                not: [
-                                    new SingleNode("subjectNotPresent", "subjectNotPresent")
-                                ]
-                            }
-                        ]
-                    }
-                ]
-            };
+            const desc = proto.and([
+                new SingleNode("role", "admin"),
+                new SingleNode("permission", "anything"),
+                proto.or([
+                    new AdvancedNode("dynamic", _ => true),
+                    proto.and([
+                        new AdvancedNode("regEx", ["identifier", /admin/])
+                    ]),
+                    new SingleNode("subjectPresent", "subjectPresent"),
+                    proto.not([
+                        new SingleNode("subjectNotPresent", "subjectNotPresent")
+                    ])
+                ])
+            ]);
 
             const expectedAST = new RootNode();
             expectedAST.body.push(new RelationshipNode("and", [
@@ -156,11 +148,10 @@ describe("Test Deadbolt", _ => {
 
         it("Deadbolt.prototype.compile", done => {
             const proto = Deadbolt.prototype;
-            const desc = {
-                and: [
+            const desc = proto.and([
                     new SingleNode("subjectPresent", "subjectPresent")
-                ]
-            };
+            ]);
+
             const judger = proto.compile(desc);
             assert.strictEqual(typeof judger, "function");
             assert.strictEqual(judger.length, 3);
@@ -426,8 +417,8 @@ describe("Test Deadbolt", _ => {
                 subject.roles = ["admin", "test", "one", "two"];
                 subject.permissions = ["delete_everything", "create_something", "do_anything", "do_one", "do_two"];
 
-                const judger = filter.compile({
-                    and: [
+                const judger = filter.compile(
+                    filter.and([
                         filter.role("admin"),
                         filter.role("test"),
                         filter.role("one"),
@@ -441,8 +432,8 @@ describe("Test Deadbolt", _ => {
                             return false;
                         }),
                         filter.permission("create_something")
-                    ]
-                });
+                    ])
+                );
 
                 const result = judger(subject.identifier, subject.roles, subject.permissions);
                 assert.strictEqual(result, true);
@@ -455,12 +446,12 @@ describe("Test Deadbolt", _ => {
                 subject.roles = ["mustFail", "failEveryTime"];
                 subject.permissions = ["one", "two"];
 
-                const judger = filter.compile({
-                    and: [
+                const judger = filter.compile(
+                    filter.and([
                         filter.role("mustFail"),
                         filter.permission("thr")
-                    ]
-                });
+                    ])
+                );
 
                 const result = judger(subject.identifier, subject.roles, subject.permissions);
                 assert.strictEqual(result, false);
@@ -473,28 +464,22 @@ describe("Test Deadbolt", _ => {
                 subject.roles = ["admin", "root"];
                 subject.permissions = ["anything"];
 
-                const judger = filter.compile({
-                    and: [
+                const judger = filter.compile(
+                    filter.and([
                         filter.dynamic((identifier, roles, permissions) => {
                             return identifier === "pass";
                         }),
-                        {
-                            and: [
-                                filter.role("admin"),
-                                {
-                                    and: [
-                                        filter.role("root"),
-                                        {
-                                            and: [
-                                                filter.permission("anything")
-                                            ]
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                });
+                        filter.and([
+                            filter.role("admin"),
+                            filter.and([
+                                filter.role("root"),
+                                filter.and([
+                                    filter.permission("anything")
+                                ])
+                            ])
+                        ])
+                    ])
+                );
 
                 const result = judger(subject.identifier, subject.roles, subject.permissions);
                 assert.strictEqual(result, true);
@@ -506,28 +491,22 @@ describe("Test Deadbolt", _ => {
                 subject.roles = ["admin", "root"];
                 subject.permissions = ["anything"];
 
-                const judger = filter.compile({
-                    and: [
+                const judger = filter.compile(
+                    filter.and([
                         filter.dynamic((identifier, roles, permissions) => {
                             return identifier === "pass";
                         }),
-                        {
-                            and: [
-                                filter.role("admin"),
-                                {
-                                    and: [
-                                        filter.role("root"),
-                                        {
-                                            and: [
-                                                filter.permission("something")
-                                            ]
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                });
+                       filter.and([
+                            filter.role("admin"),
+                            filter.and([
+                                filter.role("root"),
+                                filter.and([
+                                    filter.permission("something")
+                                ])
+                            ])
+                        ])
+                    ])
+                );
 
                 const result = judger(subject.identifier, subject.roles, subject.permissions);
                 assert.strictEqual(result, false);
@@ -541,13 +520,13 @@ describe("Test Deadbolt", _ => {
                 subject.roles = ["admin", "root"];
                 subject.permissions = ["anything"];
 
-                const judger = filter.compile({
-                    or: [
+                const judger = filter.compile(
+                    filter.or([
                         filter.role("guest"),
                         filter.regEx(["identifier", /failure/]),
                         filter.permission("anything")
-                    ]
-                });
+                    ])
+                );
 
                 const result = judger(subject.identifier, subject.roles, subject.permissions);
                 assert.strictEqual(result, true);
@@ -559,8 +538,8 @@ describe("Test Deadbolt", _ => {
                 subject.roles = ["guest", "normal"];
                 subject.permissions = ["something", "read"];
 
-                const judger = filter.compile({
-                    or: [
+                const judger = filter.compile(
+                    filter.or([
                         filter.dynamic((identifier, roles, permissions) => {
                             return identifier === "pass";
                         }),
@@ -568,8 +547,8 @@ describe("Test Deadbolt", _ => {
                         filter.role("root"),
                         filter.permission("anything"),
                         filter.regEx(["permission", /any/])
-                    ]
-                });
+                    ])
+                );
 
                 const result = judger(subject.identifier, subject.roles, subject.permissions);
                 assert.strictEqual(result, false);
@@ -581,22 +560,18 @@ describe("Test Deadbolt", _ => {
                 subject.roles = ["guest", "normal"];
                 subject.permissions = ["something", "read"];
 
-                const judger = filter.compile({
-                    or: [
+                const judger = filter.compile(
+                    filter.or([
                         filter.role("root"),
-                        {
-                            or: [
-                                filter.role("admin"),
-                                filter.permission("anything"),
-                                {
-                                    or: [
-                                        filter.permission("read")
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                });
+                        filter.or([
+                            filter.role("admin"),
+                            filter.permission("anything"),
+                            filter.or([
+                                filter.permission("read")
+                            ])
+                        ])
+                    ])
+                );
 
                 const result = judger(subject.identifier, subject.roles, subject.permissions);
                 assert.strictEqual(result, true);
@@ -608,22 +583,18 @@ describe("Test Deadbolt", _ => {
                 subject.roles = ["guest", "normal"];
                 subject.permissions = ["something", "read"];
 
-                const judger = filter.compile({
-                    or: [
+                const judger = filter.compile(
+                    filter.or([
                         filter.role("root"),
-                        {
-                            or: [
-                                filter.role("admin"),
-                                filter.permission("anything"),
-                                {
-                                    or: [
-                                        filter.permission("write")
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                });
+                        filter.or([
+                            filter.role("admin"),
+                            filter.permission("anything"),
+                            filter.or([
+                                filter.permission("write")
+                            ])
+                        ])
+                    ])
+                );
 
                 const result = judger(subject.identifier, subject.roles, subject.permissions);
                 assert.strictEqual(result, false);
@@ -637,8 +608,8 @@ describe("Test Deadbolt", _ => {
                 subject.roles = ["admin", "root"];
                 subject.permissions = ["anything", "all"];
 
-                const judger = filter.compile({
-                    not: [
+                const judger = filter.compile(
+                    filter.not([
                         filter.dynamic((identifier, roles, permissions) => {
                             return identifier === "failure";
                         }),
@@ -646,8 +617,8 @@ describe("Test Deadbolt", _ => {
                         filter.role("normal"),
                         filter.permission("something"),
                         filter.permission("none")
-                    ]
-                });
+                    ])
+                );
 
                 const result = judger(subject.identifier, subject.roles, subject.permissions);
                 assert.strictEqual(result, true);
@@ -659,8 +630,8 @@ describe("Test Deadbolt", _ => {
                 subject.roles = ["admin", "root"];
                 subject.permissions = ["anything", "all"];
 
-                const judger = filter.compile({
-                    not: [
+                const judger = filter.compile(
+                    filter.not([
                         filter.dynamic((identifier, roles, permissions) => {
                             return identifier === "failure";
                         }),
@@ -668,8 +639,8 @@ describe("Test Deadbolt", _ => {
                         filter.role("normal"),
                         filter.permission("something"),
                         filter.permission("all")
-                    ]
-                });
+                    ])
+                );
 
                 const result = judger(subject.identifier, subject.roles, subject.permissions);
                 assert.strictEqual(result, false);
@@ -681,23 +652,19 @@ describe("Test Deadbolt", _ => {
                 subject.roles = ["admin", "root"];
                 subject.permissions = ["anything", "all"];
 
-                const judger = filter.compile({
-                    not: [
+                const judger = filter.compile(
+                    filter.not([
                         filter.dynamic((identifier, roles, permissions) => {
                             return identifier === "failure";
                         }),
-                        {
-                            not: [
-                                filter.role("guest"),
-                                {
-                                    not: [
-                                        filter.permission("something")
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                });
+                        filter.not([
+                            filter.role("guest"),
+                            filter.not([
+                                filter.permission("something")
+                            ])
+                        ])
+                    ])
+                );
 
                 const result = judger(subject.identifier, subject.roles, subject.permissions);
                 assert.strictEqual(result, true);
@@ -709,28 +676,22 @@ describe("Test Deadbolt", _ => {
                 subject.roles = ["admin", "root"];
                 subject.permissions = ["anything", "all"];
 
-                const judger = filter.compile({
-                    not: [
+                const judger = filter.compile(
+                    filter.not([
                         filter.dynamic((identifier, roles, permissions) => {
                             return identifier !== "failure";
                         }),
-                        {
-                            not: [
-                                filter.role("guest"),
-                                {
-                                    not: [
-                                        filter.permission("something"),
-                                        {
-                                            not: [
-                                                filter.regEx(["permission", /all/])
-                                            ]
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                });
+                        filter.not([
+                            filter.role("guest"),
+                            filter.not([
+                                filter.permission("something"),
+                                filter.not([
+                                    filter.regEx(["permission", /all/])
+                                ])
+                            ])
+                        ])
+                    ])
+                );
 
                 const result = judger(subject.identifier, subject.roles, subject.permissions);
                 assert.strictEqual(result, false);
@@ -764,11 +725,9 @@ describe("Test Deadbolt", _ => {
 
         it("Express Driver", done => {
             const proto = Deadbolt.prototype;
-            let desc = {
-                and: [
-                    new SingleNode("role", "admin")
-                ]
-            };
+            let desc = proto.and([
+                new SingleNode("role", "admin")
+            ]);
 
             let judger = proto.compile(desc);
             let driverGen = ExpressDriver(deadboltHandler, judger);
@@ -783,11 +742,10 @@ describe("Test Deadbolt", _ => {
             assert.strictEqual(nextX.touch, true);
 
             nextX.touch = false;
-            desc = {
-                and: [
-                    new SingleNode("role", "god")
-                ]
-            };
+            desc = proto.and([
+                new SingleNode("role", "god")
+            ]);
+
             judger = proto.compile(desc);
             driverGen = ExpressDriver(deadboltHandler, judger);
             driverGen(req, res, next);
@@ -810,11 +768,9 @@ describe("Test Deadbolt", _ => {
 
         it("Deadbolt.prototype.restrict", done => {
             const deadbolt = new Deadbolt(deadboltHandler);
-            const desc = {
-                and: [
-                    new SingleNode("role", "admin")
-                ]
-            };
+            const desc = deadbolt.and([
+                new SingleNode("role", "admin")
+            ]);
 
             let driverGen = deadbolt.restrict(desc);
             const req = {};
