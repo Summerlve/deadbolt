@@ -35,15 +35,15 @@ app.use('/users', users);
 app.use('/', require('./routes/login.js'));
 app.use('/', require('./routes/logout.js'));
 app.use('/simple', require('./routes/simple/guest.js'));
-app.use('/simple', simpleDeadbolt.restrict({
-    and: [
+app.use('/simple', simpleDeadbolt.restrict(
+    simpleDeadbolt.and([
         simpleDeadbolt.dynamic((identifer, roles, permissions) => {
             return identifer === 'lzsb';
         }),
         simpleDeadbolt.role('admin'),
         simpleDeadbolt.permission('anything')
-    ]
-}), require('./routes/simple/root.js'));
+    ])
+), require('./routes/simple/root.js'));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
