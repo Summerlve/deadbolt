@@ -224,39 +224,6 @@ class Deadbolt {
         }
     }
 
-    walk(desc) {
-        let relationshipNode = {};
-        let nodeArrayBody = [];
-
-        if (desc.or) {
-            relationshipNode = new RelationshipNode("or");
-            nodeArrayBody = desc.or;
-        }
-
-        if (desc.and) {
-            relationshipNode = new RelationshipNode("and");
-            nodeArrayBody = desc.and;
-        }
-
-        if (desc.not) {
-            relationshipNode = new RelationshipNode("not");
-            nodeArrayBody = desc.not;
-        }
-
-        nodeArrayBody.forEach(param => {
-            if (param instanceof Node)
-            {
-                relationshipNode.params.push(param);
-            }
-            else
-            {
-                relationshipNode.params.push(this.walk(param));
-            }
-        });
-
-        return relationshipNode;
-    }
-
     transformer(originalAST) {
         if (!(originalAST instanceof RootNode))
         {
@@ -423,7 +390,6 @@ class Deadbolt {
 
     not(value) {
         return new RelationshipNode("not", value);
-
     }
 
     subjectPresent() {
