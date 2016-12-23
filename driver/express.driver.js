@@ -6,9 +6,20 @@ module.exports = function driver(deadboltHandler, judger) {
         deadboltHandler.beforeAuthCheck(req, res, next);
 
         let subject = deadboltHandler.getSubject(req, res, next);
-        let identifier = subject.getIdentifier();
-        let roles = subject.getRoles();
-        let permissions = subject.getPermissions();
+
+        let collect = {};
+
+        let cbGen = key => {
+            return result => {
+                collect[key] = result;
+            };
+        };
+
+        subject.getIdentifier(cbGen("identifier"));
+        subject.getRoles(cbGen("roles"));
+        subject.getPermissions(cbGen("permissions"));
+
+        let {identifier, roles, permissions} = collect;
 
         const result = judger(identifier, roles, permissions);
 

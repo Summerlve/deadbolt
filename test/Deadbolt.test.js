@@ -704,14 +704,14 @@ describe("Test Deadbolt", _ => {
         const deadboltHandler = {
             getSubject(req, res, next) {
                 return {
-                    getIdentifier() {
-                        return "lzsb";
+                    getIdentifier(cb) {
+                        return cb("lzsb");
                     },
-                    getRoles() {
-                        return ["admin", "root"];
+                    getRoles(cb) {
+                        return cb(["admin", "root"]);
                     },
-                    getPermissions() {
-                        return ["anything", "everything"];
+                    getPermissions(cb) {
+                        return cb(["anything", "everything"]);
                     }
                 };
             },
